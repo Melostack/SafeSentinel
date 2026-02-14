@@ -4,7 +4,14 @@ from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
-import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -65,7 +72,8 @@ async def check_transfer(req: CheckRequest):
             "solution": "Pode prosseguir com a transferência."
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(f"Error in /check: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/find-token")
 async def find_token_route(req: DiscoveryRequest):
@@ -73,10 +81,12 @@ async def find_token_route(req: DiscoveryRequest):
         source = SourcingAgent()
         route, error = source.find_best_route(req.token, req.network)
         if error:
-            raise HTTPException(status_code=500, detail=error)
+            logger.error(f"Error finding route: {error}")
+            raise HTTPException(status_code=500, detail="Error processing request")
         return route
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(f"Error in /find-token: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     import uvicorn

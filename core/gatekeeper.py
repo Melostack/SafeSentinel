@@ -1,8 +1,8 @@
 import json
 import re
 import os
-from connectors.binance_api import BinanceConnector
-from connectors.cmc_api import CMCConnector
+from core.connectors.binance_api import BinanceConnector
+from core.connectors.cmc_api import CMCConnector
 
 class Gatekeeper:
     def __init__(self, registry_path='core/registry/networks.json', blacklist_path='core/registry/blacklist.json'):
