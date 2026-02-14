@@ -8,6 +8,21 @@
 
 SafeSentinel é uma camada de inteligência e segurança projetada para eliminar a perda de fundos por erro humano na Web3. Unificamos a precisão do **On-Chain Forensics** com a clareza da **IA Mentora** para garantir que cada transação seja compreendida antes de ser confirmada.
 
+---
+
+## 👥 A Equipe (Human-AI Collaboration)
+
+Este é um projeto de **Matheus Melo** e sua equipe de agentes autônomos, orquestrados através do framework de elite **[vibe-to-code](https://github.com/Melostack/vibe-to-code)**.
+
+- **Matheus Melo (@Melostack):** Estrategista, Visionário e Lead Orchestrator.
+- **Assistente de Elite (Gemini):** Co-piloto de engenharia e braço direito operacional.
+- **Architect Agent:** Responsável pelo planejamento de 0% de ambiguidade e governança do código.
+- **Engineer Agent:** Mestre da execução atômica, integração RPC e lógica CCXT.
+- **Humanizer Agent:** O motor consciente que traduz riscos complexos para linguagem humana.
+- **Project Manager:** O guardião do roadmap e da qualidade final da v1.0.
+
+---
+
 ## 🚀 Pilares da Tecnologia
 
 ### 🧠 Humanizer Engine
@@ -19,12 +34,11 @@ Integração nativa com **CCXT**, **CoinMarketCap** e **Binance API**. O Sentine
 ### ⛓️ On-Chain Verifier
 Consulta direta via **RPC (Web3.py)**. Validamos na fonte se o endereço de destino é uma EOA (carteira pessoal) ou um Smart Contract, comparando bytecodes oficiais para evitar golpes de phishing e contratos falsos.
 
-### 💬 Conversational Sentinel
-Interface via **Telegram Bot** com extração de intenção por Processamento de Linguagem Natural (NLP). Fale com o Sentinel como se estivesse falando com um mentor de segurança.
+---
 
 ## 🏗️ Architecture Overview
 
-The flow is strictly unidirectional to prevent logic loops and hallucinations:
+Construído sob o protocolo **vibe-to-code**, garantindo um fluxo estritamente unidirecional e livre de alucinações.
 
 ```mermaid
 User (The Vibe) 
@@ -38,34 +52,13 @@ User (The Vibe)
 ✅ Safe Execution
 ```
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.10+
-- API Keys: Gemini, Perplexity, CoinMarketCap.
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Melostack/SafeSentinel.git
-   cd SafeSentinel
-   ```
-
-2. **Setup Secrets:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your keys
-   ```
-
-3. **Run the Sentinel:**
-   ```bash
-   # Terminal 1: Backend API
-   python3 api/server.py
-   
-   # Terminal 2: Telegram Bot
-   python3 bot/telegram_bot.py
-   ```
-
 ## 📄 License
-MIT License © 2026 Matheus Melo (Melostack) - Part of the **vibe-to-code** ecosystem.
+MIT License © 2026 Matheus Melo (Melostack).
+
+---
+
+### 🙏 Agradecimentos e Fé
+
+> *"Se o Senhor não edificar a casa, em vão trabalham os que a edificam; se o Senhor não guardar a cidade, em vão vigia a sentinela."* — **Salmos 127:1**
+
+Este projeto é dedicado ao meu melhor amigo, **Jesus Cristo**, a fonte de toda inspiração e sabedoria. Um agradecimento especial ao **Sami** pelo apoio e parceria constante nesta jornada.
