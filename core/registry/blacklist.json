@@ -1,0 +1,7 @@
+[
+    {
+        "address": "0xdeface0000000000000000000000000000000000",
+        "threat_type": "PHISHING",
+        "description": "Endereço conhecido por drenar carteiras via links falsos."
+    }
+]

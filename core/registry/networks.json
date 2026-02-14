@@ -1,0 +1,18 @@
+{
+  "exchanges": {
+    "Binance": {
+      "USDT": ["ERC20", "BEP20", "TRC20", "Polygon", "Arbitrum"],
+      "ETH": ["ERC20", "BEP20", "Arbitrum", "Optimism"]
+    }
+  },
+  "wallets": {
+    "MetaMask": {
+      "ERC20": "0x",
+      "Polygon": "0x",
+      "Arbitrum": "0x"
+    },
+    "TronLink": {
+      "TRC20": "T"
+    }
+  }
+}
