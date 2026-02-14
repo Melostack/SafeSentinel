@@ -4,11 +4,11 @@ from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
+from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
 
 app = FastAPI()
 
-# Habilitar CORS para o Frontend Next.js
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,58 +23,59 @@ class CheckRequest(BaseModel):
     network: str
     address: str
 
-class DiscoveryRequest(BaseModel):
-    token: str
-    network: str
+class IntentRequest(BaseModel):
+    text: str
 
 @app.get("/")
 def home():
-    return {"status": "SafeSentinel API Operational"}
+    return {"status": "SafeSentinel Command Center API Operational"}
+
+@app.post("/extract")
+async def extract_intent(req: IntentRequest):
+    hm = Humanizer()
+    intent = hm.extract_intent(req.text)
+    if not intent:
+        raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
+    return intent
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
     try:
-        gk = Gatekeeper('core/registry/networks.json')
+        gk = Gatekeeper()
         hm = Humanizer()
+        rpc = OnChainVerifier()
 
-        is_valid_format, format_msg = gk.validate_address_format(req.address, req.network)
+        # 1. Validação On-Chain (RPC)
+        on_chain_data = rpc.verify_address(req.address, req.network)
+
+        # 2. Lógica de Negócio (Gatekeeper)
         gk_res = gk.check_compatibility(req.origin, req.destination, req.asset, req.network, req.address)
         
         gk_res.update({
             "asset": req.asset,
             "origin_exchange": req.origin,
             "destination": req.destination,
-            "selected_network": req.network
+            "selected_network": req.network,
+            "on_chain": on_chain_data
         })
 
-        if gk_res['status'] != 'SAFE' or not is_valid_format:
+        if gk_res['status'] != 'SAFE':
             explanation = hm.humanize_risk(gk_res)
             return {
                 "status": gk_res['status'],
                 "risk_level": gk_res['risk'],
-                "title": "Alerta de Segurança" if "CRITICAL" in gk_res['risk'] else "Atenção",
+                "title": "Alerta de Segurança",
                 "message": explanation,
-                "solution": "Verifique a rede de origem e destino." if not is_valid_format else gk_res['message']
+                "on_chain": on_chain_data
             }
         
         return {
             "status": "SAFE",
             "risk_level": "LOW",
             "title": "Caminho Seguro",
-            "message": "A rota selecionada é compatível com o endereço de destino.",
-            "solution": "Pode prosseguir com a transferência."
+            "message": "A rota selecionada foi validada e está livre de riscos conhecidos.",
+            "on_chain": on_chain_data
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/find-token")
-async def find_token_route(req: DiscoveryRequest):
-    try:
-        source = SourcingAgent()
-        route, error = source.find_best_route(req.token, req.network)
-        if error:
-            raise HTTPException(status_code=500, detail=error)
-        return route
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
