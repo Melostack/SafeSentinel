@@ -1,0 +1,20 @@
+services:
+  safesentinel:
+    build: .
+    ports:
+      - "8000:8000"
+      - "5678:5678"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: always
+
+  # Se quiser rodar o banco localmente para testes
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_DB: analista_performance
+  #     POSTGRES_PASSWORD: mypassword
+  #   ports:
+  #     - "5432:5432"

@@ -11,34 +11,45 @@ class CMCConnector:
 
     def get_token_metadata(self, symbol):
         """
-        Busca metadados do token, incluindo redes suportadas e endereços de contrato.
+        Busca metadados e mercado do token via CMC.
         """
         if not self.api_key:
             return None, "API Key da CMC não configurada."
 
-        endpoint = "/v2/cryptocurrency/info"
-        params = {"symbol": symbol.upper()}
         headers = {
             "X-CMC_PRO_API_KEY": self.api_key,
             "Accept": "application/json"
         }
 
         try:
-            response = requests.get(f"{self.base_url}{endpoint}", params=params, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            
-            token_info = data['data'][symbol.upper()][0]
-            
-            # Extrair plataformas/redes e contratos
-            platforms = token_info.get('platforms', [])
+            # 1. Buscar Info (Metadados e Contratos)
+            info_url = f"{self.base_url}/v2/cryptocurrency/info"
+            info_res = requests.get(info_url, params={"symbol": symbol.upper()}, headers=headers)
+            info_res.raise_for_status()
+            info_data = info_res.json()['data'][symbol.upper()][0]
+
+            # 2. Buscar Quotes (Preço e Volume)
+            quotes_url = f"{self.base_url}/v1/cryptocurrency/quotes/latest"
+            quotes_res = requests.get(quotes_url, params={"symbol": symbol.upper()}, headers=headers)
+            quotes_res.raise_for_status()
+            quote_data = quotes_res.json()['data'][symbol.upper()]
+
+            usd_quote = quote_data['quote']['USD']
             
             result = {
-                "name": token_info.get('name'),
-                "symbol": token_info.get('symbol'),
-                "id": token_info.get('id'),
-                "description": token_info.get('description'),
-                "networks": platforms # Lista de dicts com {'name': ..., 'address': ...}
+                "name": info_data.get('name'),
+                "symbol": info_data.get('symbol'),
+                "cmc_id": info_data.get('id'),
+                "description": info_data.get('description'),
+                "logo": info_data.get('logo'),
+                "date_added": quote_data.get('date_added'),
+                "max_supply": quote_data.get('max_supply'),
+                "circulating_supply": quote_data.get('circulating_supply'),
+                "volume_24h": usd_quote.get('volume_24h'),
+                "volume_change_24h": usd_quote.get('volume_change_24h'),
+                "market_cap": usd_quote.get('market_cap'),
+                "contracts": info_data.get('platforms', []),
+                "official_links": info_data.get('urls', {})
             }
             return result, None
 

@@ -1,0 +1,36 @@
+services:
+  # Backend API
+  - type: web
+    name: safesentinel-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: BINANCE_API_KEY
+        sync: false
+      - key: BINANCE_API_SECRET
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: CMC_API_KEY
+        sync: false
+
+  # Telegram Bot
+  - type: worker
+    name: safesentinel-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot/telegram_bot.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: FASTAPI_URL
+        value: https://safesentinel-api.onrender.com # Ajustar após deploy
+      - key: GOOGLE_API_KEY
+        sync: false

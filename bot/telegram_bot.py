@@ -2,7 +2,7 @@ import os
 import logging
 import httpx
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -76,8 +76,59 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text("Desculpe, o motor de segurança está ocupado. Tente novamente.")
 
 async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Reaproveitar a lógica de busca anterior
-    pass
+    """Descobre a melhor rota para um token."""
+    if not context.args:
+        await update.message.reply_markdown(
+            "🔍 *Uso do /find:*\n"
+            "Exemplo: `/find OKB X-Layer`"
+        )
+        return
+    
+    token = context.args[0].upper()
+    network = " ".join(context.args[1:]) if len(context.args) > 1 else "Mainnet"
+
+    await update.message.reply_markdown(f"📡 *Consultando o Sourcing Agent:* Localizando {token} em {network}...")
+    await update.message.reply_chat_action("typing")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{FASTAPI_URL}/find", json={
+                "asset": token,
+                "network": network
+            }, timeout=60.0)
+            
+            res = response.json()
+            data = res['data']
+            
+            report = f"📍 *Melhor Rota para {token} ({network}):*\n\n"
+            report += f"🏦 *Origem Sugerida:* {data.get('cex_source', 'Não especificado')}\n"
+            
+            steps = data.get('steps', [])
+            if steps:
+                report += "\n*Passos:*\n"
+                for i, step in enumerate(steps, 1):
+                    report += f"{i}\. {step}\n"
+            
+            if data.get('bridge_needed'):
+                report += f"\n🌉 *Bridge:* {data.get('recommended_bridge', 'Necessário')}\n"
+            
+            if data.get('warning'):
+                report += f"\n⚠️ *Aviso:* {data.get('warning')}"
+
+            report += f"\n\n_Fonte: {'Inteligência Real-Time' if res['source'] == 'live' else 'Base de Conhecimento'}_"
+            
+            # Botão CMC se disponível
+            reply_markup = None
+            # SourcingAgent data might contain cmc_info or slug
+            slug = data.get('slug') or token.lower()
+            url = f"https://coinmarketcap.com/currencies/{slug}/"
+            keyboard = [[InlineKeyboardButton("📊 Verificar Detalhes (CMC)", url=url)]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_markdown(report, reply_markup=reply_markup)
+
+    except Exception as e:
+        await update.message.reply_text("Não consegui encontrar rotas para este token no momento. Tente novamente mais tarde.")
 
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Recebe denúncias da comunidade."""

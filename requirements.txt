@@ -7,3 +7,4 @@ web3
 python-dotenv
 python-telegram-bot
 httpx
+supabase
