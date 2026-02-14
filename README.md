@@ -36,6 +36,39 @@ Consulta direta via **RPC (Web3.py)**. Validamos na fonte se o endereço de dest
 
 ---
 
+## 🏗️ Technical Architecture: The Four Layers of Defense
+
+O SafeSentinel opera como um ecossistema de segurança em tempo real, atuando como um "tradutor de riscos" entre a intenção do usuário e a realidade fria da blockchain. O fluxo segue este rigoroso processamento:
+
+### 1. Camada de Entrada (The Gateway)
+O usuário interage via **Telegram Bot** ou **Next.js Web App**. Em vez de formulários complexos, o Sentinel aceita linguagem natural (NLP).
+*   *Exemplo:* "Quero mandar 1000 USDT da minha Binance para este endereço 0x... via rede Polygon. É seguro?"
+
+### 2. O Extrator de Intenção (Intelligent AI)
+Alimentado por **Gemini 1.5 Flash**, esta camada processa a frase e extrai dados estruturados sem alucinações:
+*   **Ativo:** `USDT` | **Origem:** `Binance` | **Rede:** `Polygon` | **Destino:** `0x...`
+
+### 3. A "Trindade da Verdade" (Deterministic Validation)
+Aqui o sistema para de "conversar" e começa a "verificar" de forma técnica e independente:
+*   **📡 Global Intelligence (CCXT/CMC):** Consulta se a exchange de origem suporta saques do ativo via rede selecionada e valida se o contrato do token é o oficial na CoinMarketCap.
+*   **⛓️ On-Chain Verifier (RPC/Web3.py):** O Sentinel vai direto na rede (via **Alchemy/Infura**) e pergunta: "Este endereço existe? É uma carteira pessoal (EOA) ou um Smart Contract?".
+*   **🛡️ Gatekeeper (Logic):** Cruza todos os dados. Se houver divergência (ex: rede errada para o formato do endereço), o status muda instantaneamente para `DANGER` ou `CAUTION`.
+
+### 4. O Humanizer (The Mentor's Verdict)
+Em vez de erros técnicos crípticos, o Humanizer gera um relatório didático e preventivo:
+*   *"🚨 PARE! O endereço que você colou é da rede Ethereum (ERC20), mas você selecionou a rede Polygon. Se confirmar agora, seus fundos serão enviados para uma rede onde você não tem acesso a eles."*
+
+---
+
+## ⚡ Por que SafeSentinel é Inquestionável?
+
+-   **Independência Criptográfica:** Ao usar RPC, o projeto não "acredita" em terceiros; ele verifica o estado real da blockchain no bloco mais recente.
+-   **Escalabilidade Global:** Com a integração **CCXT**, o suporte para 100+ corretoras é ativado com mudanças mínimas de configuração.
+-   **UX de Alta Performance:** O backend em **FastAPI (Python)** garante que o bot responda em milissegundos, tornando a segurança um facilitador, não um obstáculo.
+-   **Waze para Transações:** O Sentinel conhece os caminhos (redes), detecta buracos (erros de logística) e ladrões (scams), avisando antes de você "acelerar" o clique final.
+
+---
+
 ## 🏗️ Architecture Overview
 
 Construído sob o protocolo **vibe-to-code**, garantindo um fluxo estritamente unidirecional e livre de alucinações.
