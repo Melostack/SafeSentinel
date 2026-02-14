@@ -2,28 +2,23 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalar dependências de sistema
-RUN apt-get update && apt-get install -y 
-    curl 
-    gnupg 
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - 
-    && apt-get install -y nodejs 
+# Instalar dependências de sistema essenciais
+RUN apt-get update && apt-get install -y \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar n8n globalmente
-RUN npm install -g n8n
-
-# Copiar arquivos do projeto
+# Copiar arquivos de dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Instalar supervisor para gerenciar o bot e a api
+RUN pip install --no-cache-dir supervisor
+
+# Copiar o restante do código
 COPY . .
 
-# Expose only n8n port
-EXPOSE 5678
+# Expor a porta da API do FastAPI (8000) e do Bot se necessário
+EXPOSE 8000
 
-# Usar supervisord para rodar múltiplos processos se necessário, 
-# mas no Render/Koyeb seguiremos o supervisord.conf
-RUN pip install supervisor
-
+# Usar supervisord para rodar o bot e a api simultaneamente
 CMD ["supervisord", "-c", "supervisord.conf"]
