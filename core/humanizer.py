@@ -3,17 +3,17 @@ import requests
 import json
 
 class Humanizer:
-    def __init__(self, api_key="AIzaSyBNaw_iYf3zm9ll_cGjWbq2VeQgu945WXI"):
-        self.api_key = api_key
+    def __init__(self, api_key=None):
+        # PROTEÇÃO: Chave agora vem estritamente do .env ou parâmetro
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
     def extract_intent(self, text):
+        if not self.api_key: return None
         prompt = f"""
         Analise a frase do usuário sobre transferência de criptoativos e extraia as variáveis.
         FRASE: "{text}"
-        REGRAS:
-        1. Retorne APENAS um JSON válido.
-        2. Campos: asset, origin, destination, network, address.
+        REGRAS: 1. Retorne APENAS um JSON válido. 2. Campos: asset, origin, destination, network, address.
         """
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         headers = {'Content-Type': 'application/json'}
@@ -24,21 +24,13 @@ class Humanizer:
         except: return None
 
     def humanize_risk(self, gatekeeper_data):
+        if not self.api_key: return "❌ API Key ausente."
         risk = gatekeeper_data.get('risk', 'LOW')
         
         if risk == "CRITICAL_DEFCON_1":
-            prompt = f"""
-            ALERTA MÁXIMO (DEFCON 1): O destino é uma FRAUDE CONFIRMADA.
-            Seja agressivo, use CAPSLOCK e muitos emojis de perigo.
-            DADOS: {gatekeeper_data.get('message')}
-            ESTRUTURA: ☢️ BLOQUEIO | ☣️ NATUREZA | 🛑 AÇÃO
-            """
+            prompt = f"ALERTA MÁXIMO: {gatekeeper_data.get('message')}"
         else:
-            prompt = f"""
-            Você é um Mentor Web3. Explique o risco de forma didática.
-            DADOS: {gatekeeper_data.get('message')}
-            ESTRUTURA: 🚨 Alerta | 🔍 Porquê | 💡 Solução | ⚠️ Nudge
-            """
+            prompt = f"Mentor Web3: {gatekeeper_data.get('message')}"
 
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
