@@ -77,7 +77,7 @@ def calculate_trust_score(token_data: dict) -> float:
 @app.get("/health")
 def health_check():
     """Returns the operational status of the engine."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {"status": "SafeSentinel Engine Online", "timestamp": datetime.now().isoformat()}
 
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):

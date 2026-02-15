@@ -20,7 +20,7 @@ export default function SafeSentinelDashboard() {
     setResult(null);
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = '/api-engine';
       
       if (mode === 'sentinel') {
         const intentResponse = await fetch(`${apiUrl}/extract`, {
