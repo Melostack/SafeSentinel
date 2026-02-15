@@ -36,22 +36,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # 1. Extrair Intenção via IA
     intent = hm.extract_intent(text)
     
+    # Se não identificou intenção de transferência ou falta muito dado, 
+    # deixamos o Humanizer conduzir a conversa (o "Oi" ou "Dúvida")
     if not intent or not intent.get('asset'):
-        await update.message.reply_text("Entendi que você quer fazer uma transferência, mas qual é o Token e a Rede?")
+        response_text = hm.handle_interaction(text)
+        await update.message.reply_markdown(response_text)
         return
 
-    # Verificar se faltam dados cruciais
-    missing = []
-    if not intent.get('origin'): missing.append("Origem (CEX/Wallet)")
-    if not intent.get('network'): missing.append("Rede")
-    if not intent.get('destination'): missing.append("Destino")
-
-    if missing:
-        await update.message.reply_text(f"Entendi seu interesse em {intent['asset']}, mas preciso saber: {', '.join(missing)}")
+    # 2. Se identificou intenção, mas faltam dados, o Humanizer pede os dados
+    if not intent.get('origin') or not intent.get('network') or not intent.get('destination'):
+        response_text = hm.handle_interaction(text, gatekeeper_data={'status': 'INFO'})
+        await update.message.reply_markdown(response_text)
         return
 
-    # 2. Consultar Backend
-    await update.message.reply_markdown(f"⏳ *Validando:* {intent['asset']} | {intent['origin']} ➔ {intent['destination']} ({intent['network']})")
+    # 3. Se tem tudo, faz a análise técnica completa
+    await update.message.reply_markdown(f"⏳ *Analisando sua rota:* {intent['asset']} | {intent['origin']} ➔ {intent['destination']} ({intent['network']})")
 
     try:
         async with httpx.AsyncClient() as client:
@@ -61,19 +60,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "destination": intent['destination'],
                 "network": intent['network'],
                 "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
-            }, timeout=30.0)
+            }, timeout=45.0)
             
             res = response.json()
-            status_emoji = "✅" if res['risk_level'] == "LOW" else "🚨" if res['risk_level'] == "CRITICAL" else "⚠️"
-            
-            report = f"{status_emoji} *{res['title']}*\n\n"
-            report += f"{res['message']}\n\n"
-            report += f"💡 *Ação Sugerida:*\n{res['solution']}"
-            
-            await update.message.reply_markdown(report)
+            # O backend já chama o hm.handle_interaction via endpoint /check
+            await update.message.reply_markdown(res['message'])
 
     except Exception as e:
-        await update.message.reply_text("Desculpe, o motor de segurança está ocupado. Tente novamente.")
+        print(f"Bot Error: {e}")
+        await update.message.reply_text("Desculpe, meu motor de raciocínio deu um soluço. Pode repetir a pergunta?")
 
 async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Descobre a melhor rota para um token."""
