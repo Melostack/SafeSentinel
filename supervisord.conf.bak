@@ -1,0 +1,24 @@
+[supervisord]
+nodaemon=true
+user=root
+logfile=/tmp/supervisord.log
+pidfile=/tmp/supervisord.pid
+
+[program:telegram_bot]
+command=python bot/telegram_bot.py
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:n8n]
+command=n8n start
+autostart=true
+autorestart=true
+environment=NODE_OPTIONS="--max-old-space-size=384"
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0

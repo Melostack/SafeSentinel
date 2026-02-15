@@ -31,11 +31,12 @@ class SupabaseConnector:
         """Busca no cache de descoberta."""
         if not self.client: return None
         try:
-            res = self.client.schema("safetransfer").table("discovery_cache") 
-                .select("*") 
-                .eq("token_symbol", token.upper()) 
-                .eq("target_network", network.upper()) 
-                .execute()
+            res = (self.client.schema("safetransfer")
+                .table("discovery_cache")
+                .select("*")
+                .eq("token_symbol", token.upper())
+                .eq("target_network", network.upper())
+                .execute())
             return res.data[0] if res.data else None
         except: return None
 
