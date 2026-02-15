@@ -13,7 +13,12 @@ class Humanizer:
     def __init__(self, api_key=None):
         load_dotenv()
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        self.groq_key = os.getenv("GROQ_API_KEY")
+        self.openrouter_key = os.getenv("OPENROUTER_API_KEY")
         self.ollama_url = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/api/generate")
+        self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        self.groq_url = "https://api.groq.com/openai/v1/chat/completions"
+        self.openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
 
     def _get_system_prompt(self):
         return """
@@ -72,8 +77,6 @@ class Humanizer:
             "stream": False
         }
         try:
-            # Simulamos o "pensando..." enviando um log se estivéssemos em streaming, 
-            # mas como é request-response, o bot já envia o 'typing' no telegram_bot.py
             response = requests.post(self.ollama_url, json=payload, timeout=60)
             full_response = response.json().get('response', "")
             
@@ -83,7 +86,33 @@ class Humanizer:
             return full_response
         except Exception as e:
             print(f"Ollama Error: {e}")
-            return "Estou analisando as rotas agora... tive um pequeno atraso, mas já te respondo."
+            return None # Allow fallback to other providers
+
+    def humanize_risk(self, gatekeeper_data: dict) -> str:
+        """
+        Orchestrates the AI response using the Nudge Protocol and a provider cascade.
+        Priority: Ollama (DeepSeek-R1 - Local & Free) -> Gemini -> Groq -> OpenRouter
+        """
+        # 1. Primary: Ollama
+        res = self.handle_interaction("", gatekeeper_data=gatekeeper_data)
+        if res and not res.startswith("Estou analisando"): return res
+
+        # 2. Secondary: Gemini
+        if self.api_key:
+            res = self._call_gemini(gatekeeper_data)
+            if res: return res
+        
+        # 3. Fallback 1: Groq
+        if self.groq_key:
+            res = self._call_groq(gatekeeper_data)
+            if res: return res
+            
+        # 4. Fallback 2: OpenRouter
+        if self.openrouter_key:
+            res = self._call_openrouter(gatekeeper_data)
+            if res: return res
+
+        return f"⚠️ {gatekeeper_data.get('message', 'Erro na validação.')} (Aviso: Mentor IA offline)."
 
     def extract_intent(self, text: str) -> dict:
         prompt = f"""
@@ -95,37 +124,6 @@ class Humanizer:
         try:
             response = requests.post(self.ollama_url, json=payload, timeout=20)
             return json.loads(response.json().get('response'))
-        except:
-            return None
-
-    def _get_edge_cases(self):
-        # ... (mantido código anterior de leitura de arquivos)
-
-    def _call_ollama(self, gatekeeper_data):
-        edge_cases = self._get_edge_cases()
-        prompt = self._build_prompt(gatekeeper_data, edge_cases)
-        payload = {
-            "model": "deepseek-r1:8b",
-            "prompt": prompt,
-            "stream": False
-        }
-        try:
-            response = requests.post(self.ollama_url, json=payload, timeout=45)
-            return response.json().get('response')
-        except Exception as e:
-            print(f"Ollama Error: {e}")
-            return None
-
-    def _call_ollama_json(self, prompt):
-        payload = {
-            "model": "deepseek-r1:8b",
-            "prompt": prompt,
-            "format": "json",
-            "stream": False
-        }
-        try:
-            response = requests.post(self.ollama_url, json=payload, timeout=20)
-            return response.json().get('response')
         except:
             return None
 
@@ -196,7 +194,7 @@ class Humanizer:
         """
 
     def _get_edge_cases(self):
-        paths = ['skills/edge-case-dictionary.md', 'agent/skills/custom/edge-case-dictionary.md']
+        paths = ['skills/edge-case-dictionary.md', 'SafeSentinel/skills/edge-case-dictionary.md']
         for p in paths:
             if os.path.exists(p):
                 try:
