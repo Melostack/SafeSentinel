@@ -7,7 +7,7 @@ class Humanizer:
     """
     The Humanizer is the interpretive layer of SafeSentinel.
     It translates complex technical risks into human-readable mentorship messages
-    using a multi-LLM provider cascade (Gemini -> Groq -> OpenRouter).
+    using a multi-LLM provider cascade (Ollama -> Gemini -> Groq -> OpenRouter).
     """
 
     def __init__(self, api_key=None):
@@ -17,17 +17,16 @@ class Humanizer:
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY")
         
         # Provider Endpoints
+        self.ollama_url = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434/api/generate")
         self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
         self.groq_url = "https://api.groq.com/openai/v1/chat/completions"
         self.openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
 
     def extract_intent(self, text: str) -> dict:
         """
-        Uses Gemini to extract structured transaction data from natural language.
+        Uses LLM to extract structured transaction data from natural language.
+        Priority: Ollama (DeepSeek-R1) -> Gemini
         """
-        if not self.api_key:
-            return None
-
         prompt = f"""
         Analise a frase do usuário sobre transferência de criptoativos e extraia as variáveis.
         FRASE: "{text}"
@@ -37,6 +36,14 @@ class Humanizer:
         3. Use null para campos não identificados.
         """
         
+        # 1. Try Ollama (Local)
+        res = self._call_ollama_json(prompt)
+        if res: return res
+
+        # 2. Fallback to Gemini
+        if not self.api_key:
+            return None
+
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         try:
             response = requests.post(f"{self.gemini_url}?key={self.api_key}", json=payload, timeout=10)
@@ -50,24 +57,57 @@ class Humanizer:
     def humanize_risk(self, gatekeeper_data: dict) -> str:
         """
         Orchestrates the AI response using the Nudge Protocol and a provider cascade.
+        Priority: Ollama (DeepSeek-R1) -> Gemini -> Groq -> OpenRouter
         """
-        # 1. Primary: Gemini (Google AI Studio)
+        # 1. Primary: Ollama (DeepSeek-R1 - Local & Free)
+        res = self._call_ollama(gatekeeper_data)
+        if res: return res
+
+        # 2. Secondary: Gemini (Google AI Studio)
         if self.api_key:
             res = self._call_gemini(gatekeeper_data)
             if res: return res
         
-        # 2. Fallback 1: Groq (Llama 3)
+        # 3. Fallback 1: Groq (Llama 3)
         if self.groq_key:
             res = self._call_groq(gatekeeper_data)
             if res: return res
             
-        # 3. Fallback 2: OpenRouter (Universal Proxy)
+        # 4. Fallback 2: OpenRouter (Universal Proxy)
         if self.openrouter_key:
             res = self._call_openrouter(gatekeeper_data)
             if res: return res
 
         # Final Deterministic Fallback
         return f"⚠️ {gatekeeper_data.get('message', 'Erro na validação.')} (Aviso: Mentor IA offline)."
+
+    def _call_ollama(self, gatekeeper_data):
+        edge_cases = self._get_edge_cases()
+        prompt = self._build_prompt(gatekeeper_data, edge_cases)
+        payload = {
+            "model": "deepseek-r1:8b",
+            "prompt": prompt,
+            "stream": False
+        }
+        try:
+            response = requests.post(self.ollama_url, json=payload, timeout=45)
+            return response.json().get('response')
+        except Exception as e:
+            print(f"Ollama Error: {e}")
+            return None
+
+    def _call_ollama_json(self, prompt):
+        payload = {
+            "model": "deepseek-r1:8b",
+            "prompt": prompt,
+            "format": "json",
+            "stream": False
+        }
+        try:
+            response = requests.post(self.ollama_url, json=payload, timeout=20)
+            return response.json().get('response')
+        except:
+            return None
 
     def _call_gemini(self, gatekeeper_data):
         edge_cases = self._get_edge_cases()

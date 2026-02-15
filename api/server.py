@@ -40,6 +40,10 @@ class CheckRequest(BaseModel):
 class IntentRequest(BaseModel):
     text: str
 
+class ChatRequest(BaseModel):
+    message: str
+    system_prompt: str | None = None
+
 def calculate_trust_score(token_data: dict) -> float:
     """
     Calculates a safety score (0-100) based on market health and history.
@@ -87,6 +91,38 @@ async def extract_intent(req: IntentRequest):
     if not intent:
         raise HTTPException(status_code=400, detail="Could not interpret intent.")
     return intent
+
+@app.post("/ai/chat")
+async def ai_chat(req: ChatRequest):
+    """
+    General AI Chat endpoint for the Oratech Ecosystem (e.g. Maria).
+    Uses the local DeepSeek-R1 via Ollama as priority.
+    """
+    try:
+        hm = Humanizer()
+        # Create a mock gatekeeper context for a generic chat
+        context = {
+            "status": "INFO",
+            "risk": "NONE",
+            "message": req.message,
+            "custom_prompt": req.system_prompt
+        }
+        
+        # We can use a direct call to _call_ollama if we want to skip the humanizer nudge protocol
+        # or just use the humanizer for consistency.
+        # Let's use Ollama directly for a cleaner "Brain" response.
+        response = hm._call_ollama({
+            "status": "CHAT",
+            "message": f"SYSTEM: {req.system_prompt}\nUSER: {req.message}"
+        }) if req.system_prompt else hm._call_ollama({"status": "CHAT", "message": req.message})
+
+        if not response:
+            # Fallback to Gemini via humanize_risk logic
+            response = hm.humanize_risk(context)
+
+        return {"response": response, "model": "deepseek-r1:8b"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
