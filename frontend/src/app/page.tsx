@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, ShieldAlert, Search, Cpu, 
-  Globe, Zap, Info, ExternalLink, X, TrendingUp, BarChart3
+  Globe, Zap, Info, ExternalLink, X, TrendingUp, BarChart3, 
+  Lock, Unlock, AlertTriangle, Fingerprint, Activity, MousePointer2
 } from 'lucide-react';
 
 export default function SafeSentinelDashboard() {
@@ -46,13 +47,10 @@ export default function SafeSentinelDashboard() {
         const data = await checkResponse.json();
         setResult({ ...data, type: 'sentinel' });
       } else {
-        const [asset, ...networkParts] = query.split(' ');
-        const network = networkParts.join(' ') || 'Mainnet';
-
         const findResponse = await fetch(`${apiUrl}/find`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ asset, network })
+          body: JSON.stringify({ asset: query.split(' ')[0], network: query.split(' ')[1] || 'Mainnet' })
         });
         const data = await findResponse.json();
         setResult({ ...data, type: 'discovery' });
@@ -61,7 +59,7 @@ export default function SafeSentinelDashboard() {
       setResult({
         risk_level: 'CRITICAL',
         title: 'Erro de Conexão',
-        message: 'O motor SafeSentinel está fora de alcance. Tente novamente mais tarde.'
+        message: 'O motor SafeSentinel está fora de alcance.'
       });
     } finally {
       setLoading(false);
@@ -72,270 +70,260 @@ export default function SafeSentinelDashboard() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
   };
 
+  const TrustGauge = ({ score }: { score: number }) => {
+    const radius = 45;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (score / 100) * circumference;
+    const color = score > 70 ? '#22c55e' : score > 40 ? '#eab308' : '#ef4444';
+
+    return (
+      <div className="relative flex items-center justify-center w-32 h-32">
+        <svg className="w-full h-full transform -rotate-90">
+          <circle cx="64" cy="64" r={radius} stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+          <motion.circle 
+            cx="64" cy="64" r={radius} stroke={color} strokeWidth="8" fill="transparent" 
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center">
+          <span className="text-3xl font-black">{score}</span>
+          <span className="text-[8px] font-bold text-white/30 tracking-[0.2em]">SCORE</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-cyan-500/30 font-sans flex flex-col items-center p-4 sm:p-8 overflow-x-hidden">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-cyan-500 blur-[80px] sm:blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-purple-500 blur-[80px] sm:blur-[120px] rounded-full animate-pulse" />
+    <div className="min-h-screen bg-[#020202] text-white selection:bg-cyan-500/30 font-sans flex flex-col items-center p-4 sm:p-12 overflow-x-hidden relative">
+      {/* Premium Mesh Gradient Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-cyan-500/10 blur-[140px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 blur-[140px] rounded-full animate-pulse" />
+        <div className="absolute top-[30%] left-[40%] w-[300px] h-[300px] bg-blue-500/5 blur-[100px] rounded-full" />
       </div>
 
-      {/* Smart Trust Panel */}
-      <AnimatePresence>
-        {showIntel && result?.token_intel && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowIntel(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md z-40"
-            />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full sm:max-w-md bg-[#0A0A0A]/95 backdrop-blur-3xl border-l border-white/10 z-50 p-6 sm:p-8 shadow-2xl flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 overflow-hidden">
-                    <img src={result.token_intel.logo} alt="" className="w-6 h-6 rounded-full" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{result.token_intel.name}</h3>
-                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{result.token_intel.symbol} Metadata</span>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowIntel(false)} 
-                  className="p-3 bg-white/5 hover:bg-white/10 active:scale-90 rounded-full transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="space-y-6 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-                <div className="p-6 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-white/5">
-                  <span className="text-[10px] font-bold text-white/40 uppercase block mb-4">Trust Score Algorithm</span>
-                  <div className="flex items-end gap-2">
-                    <span className="text-6xl font-black tracking-tighter">{result.trust_score}</span>
-                    <span className="text-xl font-bold text-white/20 mb-2">/ 100</span>
-                  </div>
-                  <div className="mt-4 h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${result.trust_score}%` }}
-                      className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <TrendingUp className="w-4 h-4 text-cyan-400 mb-2" />
-                    <span className="text-[10px] font-bold text-white/30 uppercase block mb-1">Market Cap</span>
-                    <span className="text-sm font-bold">{formatCurrency(result.token_intel.market_cap)}</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <BarChart3 className="w-4 h-4 text-purple-400 mb-2" />
-                    <span className="text-[10px] font-bold text-white/30 uppercase block mb-1">Vol (24h)</span>
-                    <span className="text-sm font-bold">{formatCurrency(result.token_intel.volume_24h)}</span>
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowIntel(false)}
-                className="mt-6 w-full py-4 bg-white text-black font-black text-sm rounded-2xl active:scale-[0.98] transition-all"
-              >
-                VOLTAR AO DASHBOARD
-              </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
+      {/* Main Container */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-3xl z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-4xl z-10 flex flex-col items-center"
       >
-        {/* Top Branding */}
-        <div className="flex flex-col items-center mb-10 sm:mb-12">
-          <div className="px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl flex items-center gap-2 mb-6">
-            <Zap className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400" />
-            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/70 text-center">Melostack Sentinel Engine</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-2 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent text-center">
+        {/* Header Branding */}
+        <header className="flex flex-col items-center mb-16">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="px-5 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center gap-3 mb-8 shadow-inner"
+          >
+            <div className="relative">
+              <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400" />
+              <div className="absolute inset-0 bg-cyan-400 blur-md opacity-50" />
+            </div>
+            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/80">Melostack Sentinel v2.0</span>
+          </motion.div>
+          <h1 className="text-6xl sm:text-7xl font-black tracking-tighter mb-4 text-center bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent">
             SafeSentinel
           </h1>
-          <p className="text-white/40 font-medium text-center text-sm sm:text-base">The Web3 Interpretive Security Layer</p>
-        </div>
+          <div className="flex items-center gap-2 text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs">
+            <Fingerprint className="w-3 h-3" />
+            The Web3 Interpretive Security Layer
+          </div>
+        </header>
 
-        {/* Command Center Bar */}
-        <div className="relative group mb-8 sm:mb-12">
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-[28px] blur opacity-25 group-focus-within:opacity-100 transition-all duration-500" />
-          <div className="relative bg-[#0A0A0A] border border-white/10 rounded-[24px] p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 shadow-2xl backdrop-blur-2xl">
-            <div className="hidden sm:flex pl-4">
-              <Search className="w-5 h-5 text-white/20" />
+        {/* Command Center */}
+        <div className="w-full relative group mb-12">
+          <div className="absolute -inset-1.5 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-[32px] blur-xl opacity-20 group-focus-within:opacity-60 transition-all duration-700" />
+          <div className="relative bg-[#0A0A0A]/60 border border-white/10 rounded-[28px] p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
+            <div className="hidden sm:flex pl-5">
+              <Search className="w-6 h-6 text-white/20" />
             </div>
             <input 
               type="text" 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={mode === 'sentinel' ? "Ex: Mandar USDT da OKX..." : "Ex: OKB X-Layer"}
-              className="flex-grow bg-transparent border-none px-4 py-4 sm:py-4 text-base sm:text-lg focus:outline-none placeholder:text-white/10 font-medium"
+              placeholder={mode === 'sentinel' ? "Ex: Mandar USDT da Binance..." : "Ex: OKB X-Layer"}
+              className="flex-grow bg-transparent border-none px-5 py-5 sm:py-5 text-lg sm:text-xl focus:outline-none placeholder:text-white/5 font-semibold selection:bg-cyan-500/50"
               onKeyDown={(e) => e.key === 'Enter' && handleProcess()}
             />
             <button 
               onClick={handleProcess}
               disabled={loading || query.length < 2}
-              className="bg-white text-black px-8 py-4 sm:py-3 rounded-[18px] font-black text-sm hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:scale-100 shadow-xl shadow-white/5"
+              className="bg-white text-black px-10 py-5 sm:py-4 rounded-[22px] font-black text-sm hover:bg-cyan-50 active:scale-95 transition-all disabled:opacity-20 shadow-xl"
             >
-              {loading ? "Analizando..." : "Verificar"}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 animate-spin" />
+                  ANALISANDO
+                </div>
+              ) : "EXECUTAR"}
             </button>
           </div>
         </div>
 
-        {/* Mode Toggles */}
-        <div className="flex gap-2 sm:gap-4 mb-8 justify-center">
+        {/* Mode Selector */}
+        <div className="flex p-1.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl mb-12">
           {['sentinel', 'discovery'].map((m) => (
             <button 
               key={m}
               onClick={() => { setMode(m as any); setResult(null); }}
-              className={`px-5 sm:px-6 py-2.5 rounded-full border text-[10px] sm:text-xs font-black transition-all ${mode === m ? 'bg-white text-black border-white' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
+              className={`px-8 py-2.5 rounded-xl text-[10px] font-black transition-all tracking-[0.1em] ${mode === m ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
             >
-              MODO {m.toUpperCase()}
+              {m.toUpperCase()}
             </button>
           ))}
         </div>
 
-        {/* Result UI */}
+        {/* Dynamic Results Section */}
         <AnimatePresence mode='wait'>
-          {result && result.type === 'sentinel' && (
+          {result && (
             <motion.div 
-              key="sentinel-result"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+              initial={{ opacity: 0, scale: 0.98, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: -30 }}
+              className="w-full space-y-8"
             >
-              <div className={`p-6 sm:p-8 rounded-[32px] border backdrop-blur-3xl shadow-3xl ${
-                result.risk_level === 'LOW' ? 'bg-green-500/5 border-green-500/20' : 
-                result.risk_level === 'MEDIUM' ? 'bg-yellow-500/5 border-yellow-500/20' : 
-                'bg-red-500/5 border-red-500/20'
+              {/* Main Risk Card */}
+              <div className={`p-8 sm:p-12 rounded-[40px] border relative overflow-hidden backdrop-blur-3xl shadow-2xl ${
+                result.risk_level === 'LOW' ? 'bg-green-500/[0.03] border-green-500/20' : 
+                result.risk_level === 'MEDIUM' ? 'bg-yellow-500/[0.03] border-yellow-500/20' : 
+                'bg-red-500/[0.03] border-red-500/20'
               }`}>
-                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                  <div className={`p-4 rounded-2xl shrink-0 ${
-                    result.risk_level === 'LOW' ? 'bg-green-500/20 text-green-400' : 
-                    result.risk_level === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' : 
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {result.risk_level === 'LOW' ? <ShieldCheck className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
-                  </div>
-                  <div className="flex-grow w-full">
-                    <div className="flex items-center justify-between mb-3">
-                      <h2 className="text-xl sm:text-2xl font-bold">{result.title}</h2>
-                      {result.trust_score > 0 && (
-                        <button 
-                          onClick={() => setShowIntel(true)}
-                          className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 hover:bg-white/10 active:scale-90 transition-all group"
-                        >
-                          <span className="text-[10px] font-bold text-white/40">TRUST</span>
-                          <span className={`text-[10px] font-black ${result.trust_score > 70 ? 'text-green-400' : result.trust_score > 40 ? 'text-yellow-400' : 'text-red-400'}`}>
-                            {result.trust_score}
-                          </span>
-                        </button>
-                      )}
+                <div className="flex flex-col md:flex-row items-center sm:items-start gap-8 sm:gap-12 relative z-10">
+                  <div className="shrink-0 flex flex-col items-center gap-6">
+                    <TrustGauge score={result.trust_score} />
+                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ${
+                      result.risk_level === 'LOW' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
+                      result.risk_level === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 
+                      'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                      RISCO {result.risk_level}
                     </div>
-                    <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-6 italic">&quot;{result.message}&quot;</p>
+                  </div>
+
+                  <div className="flex-grow space-y-6">
+                    <header className="flex flex-col gap-2">
+                      <h2 className="text-3xl sm:text-4xl font-black tracking-tighter leading-tight">{result.title}</h2>
+                      <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-[10px]">Veredito do Protocolo SafeTransfer</p>
+                    </header>
                     
-                    <div className="flex flex-wrap items-center gap-3 py-4 border-t border-white/5">
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                        <Cpu className="w-3 h-3 text-cyan-400" />
-                        <span className="text-[10px] font-bold text-cyan-400 uppercase">Verified</span>
+                    <p className="text-white/80 text-lg sm:text-xl leading-relaxed font-medium italic serif">
+                      &quot;{result.message}&quot;
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <Cpu className="w-5 h-5 text-cyan-400" />
+                        <div>
+                          <span className="block text-[8px] font-black text-white/30 uppercase tracking-widest">Network Forensic</span>
+                          <span className="text-xs font-bold">{result.on_chain?.type}</span>
+                        </div>
                       </div>
-                      <div className="text-[10px] sm:text-[11px] text-white/30 font-bold uppercase tracking-wider">
-                        {result.on_chain?.type} • {parsedIntent?.network}
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <ShieldCheck className="w-5 h-5 text-purple-400" />
+                        <div>
+                          <span className="block text-[8px] font-black text-white/30 uppercase tracking-widest">Target Status</span>
+                          <span className="text-xs font-bold">Verified on {parsedIntent?.network || 'Blockchain'}</span>
+                        </div>
                       </div>
-                      <a 
-                        href={result.on_chain?.explorer_url} 
-                        target="_blank" 
-                        className="ml-auto text-[11px] font-black text-white/40 hover:text-white flex items-center gap-1 p-2 bg-white/5 rounded-lg sm:bg-transparent sm:p-0"
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Audit Grid (GoPlus) */}
+              {result.security_audit && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <SecurityMetric label="Honeypot" active={result.security_audit.is_honeypot} danger />
+                  <SecurityMetric label="Blacklist" active={result.security_audit.is_blacklisted} danger />
+                  <SecurityMetric label="Owner" active={result.security_audit.can_take_back_ownership} warning icon={<Lock className="w-4 h-4" />} />
+                  <SecurityMetric label="Verified" active={result.security_audit.is_in_dex} success icon={<ShieldCheck className="w-4 h-4" />} />
+                </div>
+              )}
+
+              {/* Discovery Timeline */}
+              {result.type === 'discovery' && (
+                <div className="p-8 sm:p-12 rounded-[40px] border border-white/10 bg-[#0A0A0A]/40 backdrop-blur-3xl space-y-10">
+                  <header className="flex items-center justify-between">
+                    <h2 className="text-3xl font-black tracking-tighter flex items-center gap-4">
+                      <Globe className="w-8 h-8 text-cyan-400" />
+                      Smart Route: {query.split(' ')[0].toUpperCase()}
+                    </h2>
+                    <div className="px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-black text-cyan-400 tracking-widest uppercase">
+                      Best Path Identified
+                    </div>
+                  </header>
+
+                  <div className="relative space-y-8 pl-8 border-l border-white/5">
+                    {result.data.steps?.map((step: string, i: number) => (
+                      <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        key={i} 
+                        className="relative"
                       >
-                        EXPLORER <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
+                        <div className="absolute left-[-41px] top-0 w-5 h-5 rounded-full bg-[#020202] border-2 border-white/20 flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee]" />
+                        </div>
+                        <p className="text-white/80 text-lg font-semibold">{step}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-10 border-t border-white/5">
+                    <DetailItem label="Primary Source" value={result.data.cex_source} />
+                    <DetailItem label="Bridge Engine" value={result.data.recommended_bridge || 'Native'} />
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {result && result.type === 'discovery' && (
-            <motion.div 
-              key="discovery-result"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
-            >
-              <div className="p-6 sm:p-8 rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-3xl shadow-3xl">
-                <h2 className="text-xl sm:text-2xl font-bold mb-6 flex items-center gap-3 text-center sm:text-left">
-                  <Globe className="w-6 h-6 text-cyan-400" />
-                  Rota de Liquidez: {query.split(' ')[0].toUpperCase()}
-                </h2>
-                
-                <div className="space-y-4">
-                  {result.data.steps?.map((step: string, i: number) => (
-                    <div key={i} className="flex gap-4 items-center">
-                      <div className="w-6 h-6 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold">
-                        {i + 1}
-                      </div>
-                      <p className="text-white/80 text-sm">{step}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <span className="text-[10px] font-bold text-white/30 uppercase block mb-1">Melhor CEX</span>
-                    <span className="text-sm font-medium">{result.data.cex_source}</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <span className="text-[10px] font-bold text-white/30 uppercase block mb-1">Bridge Recomendada</span>
-                    <span className="text-sm font-medium">{result.data.recommended_bridge || 'Nativa'}</span>
-                  </div>
-                </div>
-
-                {result.data.warning && (
-                  <div className="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3 items-center">
-                    <Info className="w-4 h-4 text-yellow-400 shrink-0" />
-                    <p className="text-xs text-yellow-400/80">{result.data.warning}</p>
-                  </div>
-                )}
-              </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <footer className="mt-20 flex flex-col items-center gap-4">
-          <div className="flex gap-8 opacity-20 hover:opacity-50 transition-opacity">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Global Discovery</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">On-Chain Forensic</span>
-            </div>
+        <footer className="mt-32 pb-12 flex flex-col items-center gap-8 opacity-20 hover:opacity-100 transition-all duration-1000">
+          <div className="flex gap-12">
+            <FooterIcon icon={<Globe />} label="Global Liquidity" />
+            <FooterIcon icon={<ShieldCheck />} label="Military Grade Security" />
+            <FooterIcon icon={<MousePointer2 />} label="One-Click Audit" />
           </div>
-          <p className="text-[10px] font-mono text-white/10 uppercase tracking-[0.4em] text-center">
-            Powered by vibe-to-code Protocol
-          </p>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.5em]">
+              Powered by Oratech Vibe-to-Code Protocol
+            </p>
+            <div className="h-px w-12 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </div>
         </footer>
       </motion.div>
     </div>
   );
 }
+
+// Sub-components for cleaner structure
+const SecurityMetric = ({ label, active, danger, warning, success, icon }: any) => (
+  <div className={`p-4 rounded-2xl border backdrop-blur-xl flex flex-col items-center gap-3 transition-all ${
+    active ? (danger ? 'bg-red-500/10 border-red-500/30 text-red-400' : warning ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : 'bg-green-500/10 border-green-500/30 text-green-400') 
+    : 'bg-white/5 border-white/10 text-white/20'
+  }`}>
+    {icon || (active ? <AlertTriangle className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />)}
+    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+  </div>
+);
+
+const DetailItem = ({ label, value }: any) => (
+  <div className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-colors group">
+    <span className="block text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2 group-hover:text-cyan-400 transition-colors">{label}</span>
+    <span className="text-xl font-bold tracking-tight">{value}</span>
+  </div>
+);
+
+const FooterIcon = ({ icon, label }: any) => (
+  <div className="flex flex-col items-center gap-3 group cursor-default">
+    <div className="p-3 rounded-xl bg-white/5 group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-all border border-transparent group-hover:border-cyan-500/20">
+      {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+    </div>
+    <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
+  </div>
+);
