@@ -22,17 +22,17 @@ class SourcingAgent:
         Você é um Arquiteto de Rotas Web3 de elite. Sua missão é proteger o capital do usuário encontrando o caminho mais eficiente para obter {token} na rede {target_network}.
 
         REQUISITOS DE PESQUISA (REAL-TIME):
-        1. LIQUIDEZ: Onde {token} é negociado com maior volume hoje? (Binance, OKX, Bybit, Uniswap?)
-        2. SAQUE DIRETO: Alguma dessas exchanges permite saque direto para a rede {target_network}?
-        3. PONTES (BRIDGES): Se o saque direto não existir, qual a bridge oficial ou agregador (Stargate, Li.Fi, Jumper, Orbiter) é mais SEGURO e barato para esta rota específica?
-        4. SEGURANÇA: Existe algum aviso de manutenção ou hack recente nesta rede ou bridge?
+        1. LIQUIDEZ CENTRALIZADA: Onde {token} é negociado com maior volume hoje? (Binance, OKX, Bybit, Coinbase?)
+        2. SAQUE DIRETO: Alguma dessas exchanges permite saque direto para a rede {target_network}? (Ex: USDT via TRC20 ou SOL via Solana).
+        3. AGREGADORES DEX (SOLANA/TRON): Se o destino for Solana, verifique se JUPITER ou RAYDIUM tem a melhor rota. Se for Tron, verifique SUNSWAP.
+        4. BRIDGES: Se necessário, qual a bridge oficial (Portal, Stargate, Allbridge) é mais segura?
 
         FORMATO DE RESPOSTA OBRIGATÓRIO (JSON PURO):
         {{
-          "steps": ["Passo 1: Compre na X", "Passo 2: Saque via rede Y", "Passo 3: Use bridge Z"],
+          "steps": ["Passo 1: Compre na X", "Passo 2: Saque via rede Y", "Passo 3: Swap no Júpiter"],
           "cex_source": "Nome da melhor CEX",
           "bridge_needed": true/false,
-          "recommended_bridge": "Nome da Bridge ou 'Nativa'",
+          "recommended_bridge": "Nome da Bridge/Agregador ou 'Nativa'",
           "estimated_fee_range": "Baixa/Média/Alta",
           "warning": "Aviso de segurança ou gas se houver"
         }}

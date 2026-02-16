@@ -8,3 +8,4 @@ python-dotenv
 python-telegram-bot
 httpx
 supabase
+base58==2.1.1

@@ -5,10 +5,11 @@
 - [ ] Task 1.2: Refine `humanizer.py` prompt with Metaphor Injection.
 - [ ] Task 1.3: Update `server.py` to ensure context flow.
 
-## Phase 2: Advanced Sourcing & Analysis (In Progress)
+## Phase 2: Advanced Sourcing & Analysis (Completed)
 - [x] Task 2.1: Expand Sourcing Agent logic for cross-chain bridges.
 - [x] Task 2.2: Implement deeper trust analysis for tokens (GoPlus).
 - [x] Task 2.3: Bot UX improvement (Interactive Routes).
+- [x] Task 2.4: Multi-Chain support (Solana/Tron) with native validation.
 
 ## Phase 3: Premium UI & Deployment
 - [ ] Task 3.1: Glassmorphism Frontend.

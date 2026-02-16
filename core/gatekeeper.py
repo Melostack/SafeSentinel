@@ -1,19 +1,45 @@
 import json
 import re
 import os
+import base58
 from core.connectors.binance_api import BinanceConnector
 from core.connectors.cmc_api import CMCConnector
 from core.connectors.ccxt_connector import CCXTConnector
 
 class Gatekeeper:
     def __init__(self, registry_path='core/registry/networks.json', blacklist_path='core/registry/blacklist.json'):
-        # ... (código anterior mantido) ...
+        # Carregar Registry Local
+        if os.path.exists(registry_path):
+            with open(registry_path, 'r') as f:
+                self.registry = json.load(f)
+        else:
+            self.registry = {"wallets": {}, "exchanges": {}}
+        
+        # Carregar Blacklist
+        if os.path.exists(blacklist_path):
+            with open(blacklist_path, 'r') as f:
+                self.blacklist = json.load(f)
+        else:
+            self.blacklist = []
+
         self.burn_addresses = [
             "0x0000000000000000000000000000000000000000",
             "0x000000000000000000000000000000000000dead",
             "0xdead000000000000000004206942069420694206"
         ]
-        # ... (restante do init) ...
+        
+        self.scam_tokens = ["XRP-SCAM", "FREE-BTC", "MUSK-TOKEN", "TEST-SCAM"]
+        
+        # Conectores
+        self.cmc = CMCConnector()
+        self.ccxt_conn = CCXTConnector()
+
+    def check_blacklist(self, address):
+        """Retorna detalhes se o endereço estiver na blacklist."""
+        for entry in self.blacklist:
+            if entry['address'].lower() == address.lower():
+                return entry
+        return None
 
     def check_burn_address(self, address):
         """Verifica se o endereço é um destino de queima (irrecuperável)."""
@@ -21,13 +47,54 @@ class Gatekeeper:
 
     def check_scam_token(self, asset):
         """Bloqueia tokens conhecidos por serem golpes."""
-        scam_list = ["XRP-SCAM", "FREE-BTC", "MUSK-TOKEN", "TEST-SCAM"]
-        return asset.upper() in scam_list
+        return asset.upper() in self.scam_tokens
+
+    def validate_address_format(self, address, network):
+        """Valida o formato do endereço baseado na rede com precisão criptográfica."""
+        net_upper = network.upper()
+        
+        # 1. Validação EVM (Ethereum, BSC, Polygon, etc)
+        evm_nets = ["ERC20", "BEP20", "POLYGON", "ARBITRUM", "OPTIMISM", "BASE", "AVALANCHE"]
+        if any(n in net_upper for n in evm_nets) or net_upper == "ETH":
+            if re.match(r"^0x[a-fA-F0-9]{40}$", address):
+                return True, "Válido (EVM)"
+            return False, f"Endereço inválido para rede {network}. Deve começar com 0x e ter 42 caracteres."
+
+        # 2. Validação TRON (Base58Check)
+        if net_upper in ["TRC20", "TRX", "TRON"]:
+            try:
+                decoded = base58.b58decode_check(address)
+                if len(decoded) == 21 and decoded[0] == 0x41: # 0x41 = 'T' prefix
+                    return True, "Válido (TRON)"
+                return False, "Endereço Tron inválido (Checksum ou Prefixo incorreto)."
+            except Exception:
+                return False, "Endereço Tron inválido (Erro de decodificação Base58)."
+
+        # 3. Validação SOLANA (Base58)
+        if net_upper in ["SOL", "SOLANA", "SPL"]:
+            try:
+                decoded = base58.b58decode(address)
+                if len(decoded) == 32:
+                    return True, "Válido (SOLANA)"
+                return False, f"Endereço Solana inválido (Tamanho incorreto: {len(decoded)} bytes)."
+            except Exception:
+                return False, "Endereço Solana inválido (Caracteres não-Base58)."
+
+        return True, "Formato não verificado (Rede desconhecida)."
 
     def check_compatibility(self, origin_cex, destination, asset, network, address, on_chain_data=None, security_audit=None):
         """
-        Versão V7: Proteção contra Scam Tokens, Solana Awareness e Security Audit (Honeypots).
+        Versão V7: Proteção completa (Scam, Burn, Audit, Format).
         """
+        # --- PRIORIDADE -3: Validação de Formato ---
+        is_valid_fmt, fmt_msg = self.validate_address_format(address, network)
+        if not is_valid_fmt:
+            return {
+                "status": "INVALID_ADDRESS_FORMAT",
+                "risk": "CRITICAL",
+                "message": fmt_msg
+            }
+
         # --- PRIORIDADE -2: Security Audit (Malicious Contract Detection) ---
         if security_audit:
             if security_audit.get('is_honeypot'):
@@ -77,7 +144,6 @@ class Gatekeeper:
 
         # --- PRIORIDADE 1.5: Smart Contract Awareness ---
         if on_chain_data and on_chain_data.get('is_contract'):
-            # Se o usuário acha que é uma Wallet mas é um Contrato
             if destination.lower() not in ["exchange", "contrato", "dapp"]:
                 return {
                     "status": "UNEXPECTED_CONTRACT",
@@ -86,12 +152,9 @@ class Gatekeeper:
                 }
 
         # --- PRIORIDADE 2: Validação de Origem (CEX) via CCXT ---
-        # Aceita 'Binance', 'OKX', 'Bybit', 'KuCoin', etc.
         networks, error = self.ccxt_conn.get_supported_networks(origin_cex, asset)
         
         if not error and networks:
-            # Tentar encontrar a rede (considerando a normalização do CCXTConnector)
-            # O front manda 'BEP20', o conector normaliza 'BSC' para 'BEP20'.
             match = next((n for n in networks if n['network'].upper() == network.upper()), None)
             
             if not match:
@@ -108,11 +171,9 @@ class Gatekeeper:
                     "message": f"Saques de {asset} via {network} estão suspensos ou em manutenção na {origin_cex}."
                 }
         elif error:
-            # Se a exchange não for suportada pela CCXT, o Humanizer usará SafeDiscovery (Intel Search)
             pass
 
         # --- PRIORIDADE 3: Validação de Destino (Wallet/CEX) ---
-        # Lógica de Mismatch conhecida (MetaMask vs Tron)
         if destination == "MetaMask" and network.upper() in ["TRC20", "TRX"]:
             return {
                 "status": "MISMATCH", 
@@ -120,7 +181,6 @@ class Gatekeeper:
                 "message": "A MetaMask não suporta a rede Tron (TRC20). O envio resultará em perda total de fundos."
             }
 
-        # Caso o destino também seja uma CEX (Transferência entre Corretoras)
         if destination.lower() in ["binance", "okx", "bybit", "gateio"]:
             dest_networks, dest_error = self.ccxt_conn.get_supported_networks(destination, asset)
             if not dest_error and dest_networks:
