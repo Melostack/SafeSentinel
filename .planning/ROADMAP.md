@@ -11,6 +11,11 @@
 - [x] Task 2.3: Bot UX improvement (Interactive Routes).
 - [x] Task 2.4: Multi-Chain support (Solana/Tron) with native validation.
 
+## Phase 3: Proactive Alerts & Monitoring (In Progress)
+- [x] Task 3.1: Database schema for monitored wallets.
+- [x] Task 3.2: Bot /monitor command.
+- [ ] Task 3.3: Implement real-time transaction detection (Watchdog).
+
 ## Phase 3: Premium UI & Deployment
 - [ ] Task 3.1: Glassmorphism Frontend.
 - [ ] Task 3.2: Render/Vercel Deploy.

@@ -63,3 +63,17 @@ class SupabaseConnector:
             self.client.schema("safetransfer").table("discovery_cache").insert(data).execute()
         except Exception as e:
             print(f"Erro ao salvar cache: {str(e)}")
+
+    def add_monitored_wallet(self, telegram_id, address, network):
+        """Registra uma nova carteira para monitoramento proativo."""
+        if not self.client: return False, "Conexão com Supabase falhou."
+        try:
+            data = {
+                "telegram_id": str(telegram_id),
+                "address": address,
+                "network": network.upper()
+            }
+            self.client.schema("safetransfer").table("monitored_wallets").insert(data).execute()
+            return True, None
+        except Exception as e:
+            return False, str(e)

@@ -37,8 +37,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Agora estou usando o motor Qwen2.5 de alta performance.\n"
         "• _'Posso mandar USDT da Binance pra MetaMask?'_\n"
         "• Use /find [token] [rede] para descobrir rotas.\n"
+        "• Use /monitor [endereço] [rede] para vigiar sua carteira.\n"
         "• Use /report [endereço] para denunciar golpes."
     )
+
+async def monitor_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Ativa o monitoramento de uma carteira."""
+    if len(context.args) < 2:
+        await update.message.reply_markdown("🔍 *Uso do /monitor:* `/monitor [ENDEREÇO] [REDE]`\nExemplo: `/monitor 0x123... ETH`")
+        return
+    
+    address = context.args[0]
+    network = context.args[1].upper()
+    telegram_id = update.effective_user.id
+    
+    from core.connectors.supabase_connector import SupabaseConnector
+    db = SupabaseConnector()
+    
+    success, error = db.add_monitored_wallet(telegram_id, address, network)
+    
+    if success:
+        await update.message.reply_markdown(
+            f"✅ *Vigia Ativado\!*\n"
+            f"O SafeSentinel agora monitora a carteira `{address}` na rede `{network}`\.\n"
+            "Qualquer transação suspeita detectada enviará um alerta aqui\!"
+        )
+    else:
+        await update.message.reply_text(f"❌ Erro ao ativar vigia: {error}")
 
 async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Descobre a melhor rota para um token."""
@@ -154,6 +179,7 @@ if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN_BOT).build()
     app.add_handler(CommandHandler('start', start))
     app.add_handler(CommandHandler('find', find_command))
+    app.add_handler(CommandHandler('monitor', monitor_command))
     app.add_handler(CommandHandler('report', report_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
