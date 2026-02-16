@@ -1,9 +1,13 @@
 import sys
 import os
 
-# Fix for ModuleNotFoundError: No module named 'core'
+# Forçar a inclusão do diretório raiz no path do Python
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+# Garantir que a biblioteca supabase oficial seja priorizada
 if project_root in sys.path:
     sys.path.remove(project_root)
 sys.path.append(project_root)
@@ -70,25 +74,24 @@ def calculate_trust_score(token_data: dict) -> float:
 
 @app.get("/health")
 def health_check():
-    return {"status": "SafeSentinel Engine Online", "timestamp": datetime.now().isoformat()}
+    return {"status": "SafeSentinel Engine Online (Docker)", "timestamp": datetime.now().isoformat()}
 
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):
     hm = Humanizer()
-    intent = hm.extract_intent(req.text)
+    intent = await hm.extract_intent(req.text)
     if not intent: raise HTTPException(status_code=400, detail="Could not interpret intent.")
     return intent
 
 @app.post("/ai/chat")
 async def ai_chat(req: ChatRequest):
-    """General AI Chat endpoint for SafeSentinel via Qwen2.5."""
+    """General AI Chat endpoint via Qwen2.5."""
     try:
         hm = Humanizer()
-        # Chama o método direto de processamento local para evitar loops de API
-        response = hm._call_ollama_raw(req.message)
+        response = await hm._call_ollama_raw(req.message)
         if not response:
             context = {"status": "INFO", "risk": "NONE", "message": req.message}
-            response = hm.humanize_risk(context)
+            response = await hm.humanize_risk(context)
         return {"response": response, "model": "qwen2.5:7b"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
@@ -113,7 +116,7 @@ async def check_transfer(req: CheckRequest):
             "selected_network": req.network, "on_chain": on_chain_data, "trust_score": trust_score
         })
 
-        explanation = hm.humanize_risk(gk_res)
+        explanation = await hm.humanize_risk(gk_res)
         is_safe = gk_res['status'] == 'SAFE'
         
         response_payload = {

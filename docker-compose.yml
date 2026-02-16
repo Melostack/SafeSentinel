@@ -1,20 +1,36 @@
 services:
-  safesentinel:
-    build: .
+  safesentinel-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: safesentinel-api
+    command: python3 api/server.py
     ports:
       - "8000:8000"
-      - "5678:5678"
     env_file:
       - .env
     volumes:
       - .:/app
     restart: always
+    networks:
+      - sentinel-network
 
-  # Se quiser rodar o banco localmente para testes
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_DB: analista_performance
-  #     POSTGRES_PASSWORD: mypassword
-  #   ports:
-  #     - "5432:5432"
+  safesentinel-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: safesentinel-bot
+    command: python3 bot/telegram_bot.py
+    depends_on:
+      - safesentinel-api
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: always
+    networks:
+      - sentinel-network
+
+networks:
+  sentinel-network:
+    driver: bridge
