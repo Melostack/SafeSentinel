@@ -143,6 +143,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 if __name__ == '__main__':
     TOKEN_BOT = os.getenv("TELEGRAM_BOT_TOKEN")
+    print("🛡️ [VPS] Iniciando SafeTransfer Conversational Bot...")
     app = ApplicationBuilder().token(TOKEN_BOT).build()
 
     app.add_handler(CommandHandler('start', start))

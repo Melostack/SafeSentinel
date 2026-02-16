@@ -64,21 +64,17 @@ class Humanizer:
 
     def _call_ollama_raw(self, prompt: str) -> str:
         payload = {
-            "model": "deepseek-r1:8b",
+            "model": "llama3:8b",
             "prompt": prompt,
             "stream": False
         }
         try:
-            response = requests.post(self.ollama_url, json=payload, timeout=60)
+            response = requests.post(self.ollama_url, json=payload, timeout=15)
             full_response = response.json().get('response', "")
-            
-            # Limpeza do DeepSeek (remover o raciocínio interno para o usuário)
-            if "<think>" in full_response:
-                return full_response.split("</think>")[-1].strip()
             return full_response
         except Exception as e:
             print(f"Ollama Error: {e}")
-            return None # Allow fallback to other providers
+            return None
 
     def humanize_risk(self, gatekeeper_data: dict) -> str:
         """
@@ -113,16 +109,15 @@ class Humanizer:
         Use null se não souber. Exemplo: {{"asset": "USDT", "origin": "Binance", "destination": "MetaMask", "network": "ERC20", "address": null}}
         """
         
-        # 1. Tenta Ollama (DeepSeek) com timeout curto
+        # 1. Tenta Ollama (Llama3) com timeout curtíssimo
         try:
-            payload = {"model": "deepseek-r1:8b", "prompt": prompt, "format": "json", "stream": False}
-            print(f"DEBUG: Tentando extrair intenção via DeepSeek (Ollama)...")
-            response = requests.post(self.ollama_url, json=payload, timeout=5) # Timeout de 5s
+            payload = {"model": "llama3:8b", "prompt": prompt, "format": "json", "stream": False}
+            print(f"DEBUG: Extraindo com Llama3 local...")
+            response = requests.post(self.ollama_url, json=payload, timeout=3) # 3 segundos apenas
             if response.status_code == 200:
-                print("DEBUG: DeepSeek respondeu com sucesso.")
                 return json.loads(response.json().get('response'))
-        except Exception as e:
-            print(f"DEBUG: Falha no DeepSeek: {e}")
+        except:
+            pass
 
         # 2. Fallback imediato para Gemini
         if self.api_key:
