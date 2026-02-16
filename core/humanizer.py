@@ -14,7 +14,7 @@ class Humanizer:
         load_dotenv()
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.groq_key = os.getenv("GROQ_API_KEY")
-        # Túnel oficial Docker -> VPS Host
+        # Túnel de Elite: host.docker.internal (Docker -> VPS Host)
         self.ollama_url = os.getenv("OLLAMA_URL") or "http://host.docker.internal:11434/api/generate"
         self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
         self.groq_url = "https://api.groq.com/openai/v1/chat/completions"
@@ -74,7 +74,8 @@ class Humanizer:
         
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.post(self.ollama_url, json=payload, timeout=10.0)
+                # Timeout de Elite para CPU: 120s
+                response = await client.post(self.ollama_url, json=payload, timeout=120.0)
                 if response.status_code == 200:
                     return json.loads(response.json().get('response'))
             except:
