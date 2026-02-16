@@ -64,16 +64,16 @@ class Humanizer:
 
     def _call_ollama_raw(self, prompt: str) -> str:
         payload = {
-            "model": "llama3:8b",
+            "model": "qwen2.5:7b", # Modelo otimizado para VPS (rápido e inteligente)
             "prompt": prompt,
             "stream": False
         }
         try:
+            print(f"DEBUG: Chamando Ollama (Qwen2.5) na VPS...")
             response = requests.post(self.ollama_url, json=payload, timeout=15)
-            full_response = response.json().get('response', "")
-            return full_response
+            return response.json().get('response', "")
         except Exception as e:
-            print(f"Ollama Error: {e}")
+            print(f"DEBUG: Ollama Falhou ou Timeout: {e}")
             return None
 
     def humanize_risk(self, gatekeeper_data: dict) -> str:
@@ -109,11 +109,11 @@ class Humanizer:
         Use null se não souber. Exemplo: {{"asset": "USDT", "origin": "Binance", "destination": "MetaMask", "network": "ERC20", "address": null}}
         """
         
-        # 1. Tenta Ollama (Llama3) com timeout curtíssimo
+        # 1. Tenta Ollama (Qwen2.5) com timeout curto
         try:
-            payload = {"model": "llama3:8b", "prompt": prompt, "format": "json", "stream": False}
-            print(f"DEBUG: Extraindo com Llama3 local...")
-            response = requests.post(self.ollama_url, json=payload, timeout=3) # 3 segundos apenas
+            payload = {"model": "qwen2.5:7b", "prompt": prompt, "format": "json", "stream": False}
+            print(f"DEBUG: Extraindo intenção com Qwen2.5 local...")
+            response = requests.post(self.ollama_url, json=payload, timeout=5)
             if response.status_code == 200:
                 return json.loads(response.json().get('response'))
         except:
