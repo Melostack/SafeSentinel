@@ -14,8 +14,8 @@ class Humanizer:
         load_dotenv()
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.groq_key = os.getenv("GROQ_API_KEY")
-        # Priorizar IP da VPS se a variável OLLAMA_URL não estiver definida (Cenário Docker)
-        self.ollama_url = os.getenv("OLLAMA_URL") or "http://3.15.5.238:11434/api/generate"
+        # Túnel oficial Docker -> VPS Host
+        self.ollama_url = os.getenv("OLLAMA_URL") or "http://host.docker.internal:11434/api/generate"
         self.gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
         self.groq_url = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -45,7 +45,7 @@ class Humanizer:
         async with httpx.AsyncClient() as client:
             try:
                 print(f"DEBUG: Consultando Qwen2.5 na VPS: {self.ollama_url}")
-                response = await client.post(self.ollama_url, json=payload, timeout=30.0)
+                response = await client.post(self.ollama_url, json=payload, timeout=180.0)
                 if response.status_code == 200:
                     return response.json().get('response', "")
                 return None

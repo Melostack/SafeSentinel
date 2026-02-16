@@ -12,6 +12,8 @@ services:
     volumes:
       - .:/app
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sentinel-network
 
@@ -28,6 +30,8 @@ services:
     volumes:
       - .:/app
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sentinel-network
 
