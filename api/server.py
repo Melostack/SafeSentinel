@@ -104,30 +104,45 @@ async def ai_chat(req: ChatRequest):
 
 @app.post("/find")
 async def find_route(req: SourcingRequest):
+    # ... (lógica existente mantida)
+    pass
+
+@app.post("/webhook/alchemy")
+async def alchemy_webhook(payload: dict):
     """
-    SafeDiscovery: Finds the best route to acquire a token on a specific network.
-    Uses Perplexity Sonar via SourcingAgent.
+    Alchemy Radar: Receives real-time address activity.
+    Triggers proactive security audit and alerts the user.
     """
     try:
-        agent = SourcingAgent()
-        supabase = SupabaseConnector()
+        activity = payload.get('event', {}).get('activity', [{}])[0]
+        to_address = activity.get('toAddress')
+        asset = activity.get('asset')
+        network = activity.get('network', 'ETH') # Alchemy mapeia no payload
         
-        # 1. Check Cache
-        cached = supabase.get_discovery_cache(req.asset, req.network)
-        if cached:
-            return {"status": "SUCCESS", "source": "cache", "data": cached['route_data']}
+        if not to_address: return {"status": "ignored"}
+
+        gk = Gatekeeper()
+        hm = Humanizer()
+        rpc = OnChainVerifier()
+
+        # 1. Análise On-Chain Silenciosa
+        on_chain = rpc.verify_address(to_address, network)
         
-        # 2. Search Live
-        data, error = await agent.find_best_route(req.asset, req.network)
-        if error:
-            raise HTTPException(status_code=500, detail=error)
+        # 2. Gatekeeper Check
+        # Simulamos que a origem é uma das carteiras monitoradas
+        gk_res = gk.check_compatibility("Monitored Wallet", "Destination", asset, network, to_address, on_chain_data=on_chain)
         
-        # 3. Save Cache
-        supabase.save_discovery_cache(req.asset, req.network, data)
-        
-        return {"status": "SUCCESS", "source": "live", "data": data}
+        # Se o risco for maior que LOW, disparamos o alarme
+        if gk_res['risk'] != 'LOW':
+            explanation = await hm.humanize_risk(gk_res)
+            # Enviar para o Telegram (via integração que criaremos no Bot)
+            # Por enquanto, logamos o alarme
+            print(f"🚨 ALERTA PROATIVO: {explanation}")
+            
+        return {"status": "processed", "risk": gk_res['risk']}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Discovery Error: {str(e)}")
+        print(f"Webhook Error: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):

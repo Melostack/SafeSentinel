@@ -14,14 +14,25 @@ Esta onda foca no registro de carteiras e no esqueleto do Watchdog.
 </task>
 
 <task type="auto">
-  <name>Implementation: Wallet Watchdog Script</name>
-  <files>core/watchdog.py</files>
+  <name>API: Alchemy Webhook Receiver</name>
+  <files>api/server.py</files>
   <action>
-    Criar script que lê as carteiras do banco e consulta o histórico de transações recentes (via Explorer APIs ou RPC).
-    Se uma transação nova for detectada, enviar os dados para o Gatekeeper analisar.
+    Criar o endpoint POST /webhook/alchemy.
+    Este endpoint deve processar o payload da Alchemy (Address Activity) e extrair: from, to, value, asset, network.
   </action>
-  <verify>Rodar o script e ver se ele detecta uma transação de teste.</verify>
-  <done>Watchdog detectando transações em tempo real.</done>
+  <verify>Simular um POST no endpoint e ver se o log do servidor processa os dados.</verify>
+  <done>Backend pronto para receber sinais da Alchemy.</done>
+</task>
+
+<task type="auto">
+  <name>Logic: Proactive Risk Analysis</name>
+  <files>api/server.py, core/humanizer.py</files>
+  <action>
+    Integrar o fluxo de análise proativa: 
+    Webhook -> Gatekeeper Check -> Humanizer (Alerta Urgente) -> Telegram Send.
+  </action>
+  <verify>Gerar um alerta fake e conferir se ele chega no Telegram com o tom de "Vigia".</verify>
+  <done>Fluxo de monitoramento completo.</done>
 </task>
 
 <task type="auto">
