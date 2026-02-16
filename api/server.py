@@ -110,36 +110,56 @@ async def find_route(req: SourcingRequest):
 @app.post("/webhook/alchemy")
 async def alchemy_webhook(payload: dict):
     """
-    Alchemy Radar: Receives real-time address activity.
-    Triggers proactive security audit and alerts the user.
+    Alchemy Radar: Multichain Activity Receiver.
+    Maps Alchemy networks to internal Sentinel networks.
     """
     try:
+        # 1. Identificar a rede do sinal da Alchemy
+        alchemy_net = payload.get('event', {}).get('network', 'ETH_MAINNET')
+        network_map = {
+            "ETH_MAINNET": "ETH",
+            "MATIC_MAINNET": "POLYGON",
+            "ARB_MAINNET": "ARBITRUM",
+            "OPT_MAINNET": "OPTIMISM",
+            "BASE_MAINNET": "BASE"
+        }
+        network = network_map.get(alchemy_net, "ETH")
+
         activity = payload.get('event', {}).get('activity', [{}])[0]
         to_address = activity.get('toAddress')
+        from_address = activity.get('fromAddress')
         asset = activity.get('asset')
-        network = activity.get('network', 'ETH') # Alchemy mapeia no payload
         
         if not to_address: return {"status": "ignored"}
 
+        # 2. Forensic & Security Check
         gk = Gatekeeper()
         hm = Humanizer()
         rpc = OnChainVerifier()
 
-        # 1. Análise On-Chain Silenciosa
         on_chain = rpc.verify_address(to_address, network)
+        gk_res = gk.check_compatibility(f"Monitored Wallet ({from_address[:6]})", "Destination", asset, network, to_address, on_chain_data=on_chain)
         
-        # 2. Gatekeeper Check
-        # Simulamos que a origem é uma das carteiras monitoradas
-        gk_res = gk.check_compatibility("Monitored Wallet", "Destination", asset, network, to_address, on_chain_data=on_chain)
-        
-        # Se o risco for maior que LOW, disparamos o alarme
+        # 3. Alerta Proativo se houver risco
         if gk_res['risk'] != 'LOW':
-            explanation = await hm.humanize_risk(gk_res)
-            # Enviar para o Telegram (via integração que criaremos no Bot)
-            # Por enquanto, logamos o alarme
-            print(f"🚨 ALERTA PROATIVO: {explanation}")
+            supabase = SupabaseConnector()
+            # Busca quem é o dono dessa carteira no nosso banco
+            res = (supabase.client.schema("safetransfer")
+                .table("monitored_wallets")
+                .select("telegram_id")
+                .eq("address", from_address)
+                .eq("is_active", True)
+                .execute())
             
-        return {"status": "processed", "risk": gk_res['risk']}
+            if res.data:
+                telegram_id = res.data[0]['telegram_id']
+                explanation = await hm.humanize_risk(gk_res)
+                
+                # Chamar o método de alerta do bot
+                from bot.telegram_bot import send_proactive_alert
+                await send_proactive_alert(telegram_id, explanation)
+            
+        return {"status": "processed", "network_detected": network, "risk": gk_res['risk']}
     except Exception as e:
         print(f"Webhook Error: {e}")
         return {"status": "error", "message": str(e)}

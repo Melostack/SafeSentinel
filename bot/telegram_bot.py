@@ -140,13 +140,30 @@ async def send_proactive_alert(telegram_id: str, message: str):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = update.message.text
-    print(f"DEBUG: Mensagem recebida: {text}")
+    print(f"🛡️ [RECEBIDO]: {text}")
     await update.message.reply_chat_action("typing")
     
-    # 1. Extrair Intenção via IA (Agora assíncrono)
+    # 1. Extrair Intenção via IA
     intent = await hm.extract_intent(text)
     
-    # Se não identificou intenção de transferência ou falta muito dado
+    # --- NOVA LÓGICA: Monitoramento via Linguagem Natural ---
+    monitor_keywords = ["vigie", "monitore", "vigiar", "monitorar", "avise", "alerta"]
+    if any(key in text.lower() for key in monitor_keywords) and intent and intent.get('address'):
+        address = intent['address']
+        network = intent.get('network') or 'ETH'
+        telegram_id = update.effective_user.id
+        
+        from core.connectors.supabase_connector import SupabaseConnector
+        db = SupabaseConnector()
+        success, error = db.add_monitored_wallet(telegram_id, address, network)
+        
+        if success:
+            await update.message.reply_markdown(f"✅ *Entendido\!* Comecei a vigiar a carteira `{address}` na rede `{network}` para você\.")
+        else:
+            await update.message.reply_text(f"Tive um problema ao registrar: {error}")
+        return
+
+    # --- Lógica de Transferência (Existente) ---
     if not intent or not intent.get('asset'):
         response_text = await hm.handle_interaction(text)
         await update.message.reply_markdown(response_text)
