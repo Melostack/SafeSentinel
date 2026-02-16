@@ -19,10 +19,23 @@ class Gatekeeper:
         """Verifica se o endereço é um destino de queima (irrecuperável)."""
         return address.lower() in self.burn_addresses
 
+    def check_scam_token(self, asset):
+        """Bloqueia tokens conhecidos por serem golpes."""
+        scam_list = ["XRP-SCAM", "FREE-BTC", "MUSK-TOKEN", "TEST-SCAM"]
+        return asset.upper() in scam_list
+
     def check_compatibility(self, origin_cex, destination, asset, network, address, on_chain_data=None):
         """
-        Versão V5: Detecção de Burn e On-Chain Awareness.
+        Versão V6: Proteção contra Scam Tokens e Solana Awareness.
         """
+        # --- PRIORIDADE -1: Scam Tokens ---
+        if self.check_scam_token(asset):
+            return {
+                "status": "SCAM_TOKEN_DETECTED",
+                "risk": "CRITICAL",
+                "message": f"ALERTA: O ativo {asset} foi identificado como um golpe conhecido ou possui alto risco de segurança."
+            }
+
         # --- PRIORIDADE 0: Burn Address (Queima de fundos) ---
         if self.check_burn_address(address):
             return {
