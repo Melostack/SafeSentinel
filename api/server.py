@@ -20,6 +20,8 @@ from core.humanizer import Humanizer
 from core.connectors.web3_rpc_connector import OnChainVerifier
 from core.connectors.supabase_connector import SupabaseConnector
 from core.connectors.cmc_api import CMCConnector
+from core.connectors.goplus_api import GoPlusConnector
+from core.sourcing_agent import SourcingAgent
 import time
 import math
 from datetime import datetime
@@ -51,6 +53,10 @@ class IntentRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     system_prompt: str | None = None
+
+class SourcingRequest(BaseModel):
+    asset: str
+    network: str
 
 def calculate_trust_score(token_data: dict) -> float:
     """Calculates a safety score (0-100) based on market health."""
@@ -96,6 +102,33 @@ async def ai_chat(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
 
+@app.post("/find")
+async def find_route(req: SourcingRequest):
+    """
+    SafeDiscovery: Finds the best route to acquire a token on a specific network.
+    Uses Perplexity Sonar via SourcingAgent.
+    """
+    try:
+        agent = SourcingAgent()
+        supabase = SupabaseConnector()
+        
+        # 1. Check Cache
+        cached = supabase.get_discovery_cache(req.asset, req.network)
+        if cached:
+            return {"status": "SUCCESS", "source": "cache", "data": cached['route_data']}
+        
+        # 2. Search Live
+        data, error = await agent.find_best_route(req.asset, req.network)
+        if error:
+            raise HTTPException(status_code=500, detail=error)
+        
+        # 3. Save Cache
+        supabase.save_discovery_cache(req.asset, req.network, data)
+        
+        return {"status": "SUCCESS", "source": "live", "data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Discovery Error: {str(e)}")
+
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
     start_time = time.time()
@@ -105,15 +138,33 @@ async def check_transfer(req: CheckRequest):
         rpc = OnChainVerifier()
         supabase = SupabaseConnector()
         cmc = CMCConnector()
+        goplus = GoPlusConnector()
 
-        token_intel, _ = cmc.get_token_metadata(req.asset)
-        trust_score = calculate_trust_score(token_intel) if token_intel else 0
-        on_chain_data = rpc.verify_address(req.address, req.network)
-        gk_res = gk.check_compatibility(req.origin, req.destination, req.asset, req.network, req.address, on_chain_data=on_chain_data)
+        # 1. Market & Trust Intelligence
+        token_intel, _ = await cmc.get_token_metadata(req.asset)
         
+        # 2. On-Chain Forensics & Security Audit
+        on_chain_data = rpc.verify_address(req.address, req.network)
+        security_intel = None
+        
+        # Se for um contrato (token), faz o audit de segurança
+        if on_chain_data.get('is_contract') or req.asset.upper() != "ETH":
+            security_intel, _ = await goplus.check_token_security(req.address, req.network)
+
+        trust_score = calculate_trust_score(token_intel) if token_intel else 0
+        
+        # Ajustar Trust Score com base na análise de segurança (GoPlus)
+        if security_intel:
+            trust_score = max(0, trust_score - security_intel['trust_score_impact'])
+
+        # 3. Security Logic (Gatekeeper)
+        gk_res = gk.check_compatibility(req.origin, req.destination, req.asset, req.network, req.address, on_chain_data=on_chain_data, security_audit=security_intel)
+        
+        # Consolidar context para o Humanizer
         gk_res.update({
             "asset": req.asset, "origin_exchange": req.origin, "destination": req.destination,
-            "selected_network": req.network, "on_chain": on_chain_data, "trust_score": trust_score
+            "selected_network": req.network, "on_chain": on_chain_data, "trust_score": trust_score,
+            "security_audit": security_intel
         })
 
         explanation = await hm.humanize_risk(gk_res)

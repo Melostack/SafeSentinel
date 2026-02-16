@@ -24,10 +24,31 @@ class Gatekeeper:
         scam_list = ["XRP-SCAM", "FREE-BTC", "MUSK-TOKEN", "TEST-SCAM"]
         return asset.upper() in scam_list
 
-    def check_compatibility(self, origin_cex, destination, asset, network, address, on_chain_data=None):
+    def check_compatibility(self, origin_cex, destination, asset, network, address, on_chain_data=None, security_audit=None):
         """
-        Versão V6: Proteção contra Scam Tokens e Solana Awareness.
+        Versão V7: Proteção contra Scam Tokens, Solana Awareness e Security Audit (Honeypots).
         """
+        # --- PRIORIDADE -2: Security Audit (Malicious Contract Detection) ---
+        if security_audit:
+            if security_audit.get('is_honeypot'):
+                return {
+                    "status": "HONEYPOT_DETECTED",
+                    "risk": "CRITICAL",
+                    "message": f"ALERTA MÁXIMO: O contrato de {asset} é um HONEYPOT. Você conseguirá comprar, mas NUNCA conseguirá vender."
+                }
+            if security_audit.get('is_blacklisted'):
+                return {
+                    "status": "ADDRESS_BLACKLISTED",
+                    "risk": "CRITICAL",
+                    "message": f"ALERTA: Este endereço de {asset} está em uma blacklist de segurança. Os fundos podem ser bloqueados."
+                }
+            if security_audit.get('trust_score_impact', 0) > 50:
+                return {
+                    "status": "HIGH_RISK_CONTRACT",
+                    "risk": "HIGH",
+                    "message": f"Cuidado: O contrato de {asset} possui múltiplas funções de alto risco (ex: autodeclaração de propriedade ou pausa de transferências)."
+                }
+
         # --- PRIORIDADE -1: Scam Tokens ---
         if self.check_scam_token(asset):
             return {
