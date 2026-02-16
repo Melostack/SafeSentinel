@@ -1,5 +1,16 @@
 import os
+import sys
+
+# Forçar a remoção do diretório raiz do path temporariamente para importar a lib oficial
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if project_root in sys.path:
+    sys.path.remove(project_root)
+
 from supabase import create_client, Client
+
+# Restaurar o path para outras importações internas funcionarem
+sys.path.append(project_root)
+
 from dotenv import load_dotenv
 
 load_dotenv()

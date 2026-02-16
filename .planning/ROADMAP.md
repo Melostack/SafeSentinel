@@ -1,0 +1,14 @@
+# ROADMAP: SafeSentinel Evolution
+
+## Phase 1: Humanizer Refinement (Current)
+- [ ] Task 1.1: Create `tests/humanizer_test_cases.py`.
+- [ ] Task 1.2: Refine `humanizer.py` prompt with Metaphor Injection.
+- [ ] Task 1.3: Update `server.py` to ensure context flow.
+
+## Phase 2: Advanced Sourcing & Analysis
+- [ ] Task 2.1: Expand Sourcing Agent logic for cross-chain bridges.
+- [ ] Task 2.2: Implement deeper trust analysis for tokens.
+
+## Phase 3: Premium UI & Deployment
+- [ ] Task 3.1: Glassmorphism Frontend.
+- [ ] Task 3.2: Render/Vercel Deploy.

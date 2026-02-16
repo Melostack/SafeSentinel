@@ -2,7 +2,12 @@ import sys
 import os
 
 # Fix for ModuleNotFoundError: No module named 'core'
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# E garantir que a biblioteca supabase oficial seja priorizada sobre a pasta local
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+if project_root in sys.path:
+    sys.path.remove(project_root)
+sys.path.append(project_root)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -146,7 +151,7 @@ async def check_transfer(req: CheckRequest):
         on_chain_data = rpc.verify_address(req.address, req.network)
 
         # 3. Security Logic (Gatekeeper)
-        gk_res = gk.check_compatibility(req.origin, req.destination, req.asset, req.network, req.address)
+        gk_res = gk.check_compatibility(req.origin, req.destination, req.asset, req.network, req.address, on_chain_data=on_chain_data)
         
         # Consolidate context for the Humanizer
         gk_res.update({
