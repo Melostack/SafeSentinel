@@ -107,14 +107,28 @@ async def find_route(req: SourcingRequest):
     # ... (lógica existente mantida)
     pass
 
+import hmac
+import hashlib
+from fastapi import FastAPI, HTTPException, Request, Header
+from fastapi.middleware.cors import CORSMiddleware
+# ... (restante dos imports)
+
 @app.post("/webhook/alchemy")
-async def alchemy_webhook(payload: dict):
+async def alchemy_webhook(request: Request, x_alchemy_signature: str = Header(None)):
     """
-    Alchemy Radar: Multichain Activity Receiver.
-    Maps Alchemy networks to internal Sentinel networks.
+    Alchemy Radar: Multichain Activity Receiver with HMAC Validation.
     """
+    # 1. Validar Assinatura (Segurança Crítica)
+    signing_key = os.getenv("ALCHEMY_SIGNING_KEY")
+    if signing_key:
+        body = await request.body()
+        signature = hmac.new(signing_key.encode('utf-8'), body, hashlib.sha256).hexdigest()
+        if signature != x_alchemy_signature:
+            raise HTTPException(status_code=401, detail="Invalid signature")
+
     try:
-        # 1. Identificar a rede do sinal da Alchemy
+        payload = await request.json()
+        # 2. Identificar a rede do sinal da Alchemy
         alchemy_net = payload.get('event', {}).get('network', 'ETH_MAINNET')
         network_map = {
             "ETH_MAINNET": "ETH",

@@ -13,13 +13,20 @@ class SourcingAgent:
 
     async def find_best_route(self, token, target_network):
         """
-        Consulta o Perplexity Sonar para encontrar a melhor rota de aquisição e bridge de forma ASSÍNCRONA.
+        Consulta o Perplexity Sonar com SANITIZAÇÃO de input.
         """
         if not self.api_key:
             return None, "API Key do Perplexity não configurada."
 
+        # SANITIZAÇÃO: Permitir apenas alfanuméricos e limitando o tamanho
+        clean_token = "".join(c for c in token if c.isalnum())[:10].upper()
+        clean_net = "".join(c for c in target_network if c.isalnum() or c.isspace())[:20]
+
+        if not clean_token:
+            return None, "Token inválido ou malformado."
+
         prompt = f"""
-        Você é um Arquiteto de Rotas Web3 de elite. Sua missão é proteger o capital do usuário encontrando o caminho mais eficiente para obter {token} na rede {target_network}.
+        Você é um Arquiteto de Rotas Web3 de elite. Sua missão é proteger o capital do usuário encontrando o caminho mais eficiente para obter {clean_token} na rede {clean_net}.
 
         REQUISITOS DE PESQUISA (REAL-TIME):
         1. LIQUIDEZ CENTRALIZADA: Onde {token} é negociado com maior volume hoje? (Binance, OKX, Bybit, Coinbase?)

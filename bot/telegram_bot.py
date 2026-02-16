@@ -140,10 +140,17 @@ async def send_proactive_alert(telegram_id: str, message: str):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = update.message.text
-    print(f"🛡️ [RECEBIDO]: {text}")
+    # PRIVACIDADE: Mascarar endereços nos logs
+    log_text = re.sub(r'0x[a-fA-F0-9]{40}', '0x...[MASKED]', text)
+    print(f"🛡️ [RECEBIDO]: {log_text}")
     await update.message.reply_chat_action("typing")
     
-    # 1. Extrair Intenção via IA
+    # 1. Validação de Segurança Básica (Tamanho do Input)
+    if len(text) > 500:
+        await update.message.reply_text("Sua mensagem é muito longa para o motor de análise. Por favor, seja mais direto.")
+        return
+
+    # 2. Extrair Intenção via IA
     intent = await hm.extract_intent(text)
     
     # --- NOVA LÓGICA: Monitoramento via Linguagem Natural ---
