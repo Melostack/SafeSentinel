@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, ShieldAlert, Search, Cpu, 
-  Globe, Zap, ArrowRight, Info, ExternalLink, X, TrendingUp, BarChart3, Clock
+  Globe, Zap, Info, ExternalLink, X, TrendingUp, BarChart3
 } from 'lucide-react';
 
 export default function SafeSentinelDashboard() {
@@ -213,8 +213,9 @@ export default function SafeSentinelDashboard() {
 
         {/* Result UI */}
         <AnimatePresence mode='wait'>
-          {result && (
+          {result && result.type === 'sentinel' && (
             <motion.div 
+              key="sentinel-result"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -248,7 +249,7 @@ export default function SafeSentinelDashboard() {
                         </button>
                       )}
                     </div>
-                    <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-6 italic">"{result.message}"</p>
+                    <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-6 italic">&quot;{result.message}&quot;</p>
                     
                     <div className="flex flex-wrap items-center gap-3 py-4 border-t border-white/5">
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
@@ -271,7 +272,6 @@ export default function SafeSentinelDashboard() {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
 
           {result && result.type === 'discovery' && (
             <motion.div 
@@ -281,8 +281,8 @@ export default function SafeSentinelDashboard() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="p-8 rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-3xl shadow-3xl">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <div className="p-6 sm:p-8 rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-3xl shadow-3xl">
+                <h2 className="text-xl sm:text-2xl font-bold mb-6 flex items-center gap-3 text-center sm:text-left">
                   <Globe className="w-6 h-6 text-cyan-400" />
                   Rota de Liquidez: {query.split(' ')[0].toUpperCase()}
                 </h2>
@@ -290,7 +290,7 @@ export default function SafeSentinelDashboard() {
                 <div className="space-y-4">
                   {result.data.steps?.map((step: string, i: number) => (
                     <div key={i} className="flex gap-4 items-center">
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold">
+                      <div className="w-6 h-6 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold">
                         {i + 1}
                       </div>
                       <p className="text-white/80 text-sm">{step}</p>
@@ -298,7 +298,7 @@ export default function SafeSentinelDashboard() {
                   ))}
                 </div>
 
-                <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
                     <span className="text-[10px] font-bold text-white/30 uppercase block mb-1">Melhor CEX</span>
                     <span className="text-sm font-medium">{result.data.cex_source}</span>
@@ -311,7 +311,7 @@ export default function SafeSentinelDashboard() {
 
                 {result.data.warning && (
                   <div className="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3 items-center">
-                    <Info className="w-4 h-4 text-yellow-400" />
+                    <Info className="w-4 h-4 text-yellow-400 shrink-0" />
                     <p className="text-xs text-yellow-400/80">{result.data.warning}</p>
                   </div>
                 )}
@@ -331,7 +331,7 @@ export default function SafeSentinelDashboard() {
               <span className="text-[10px] font-bold uppercase tracking-widest">On-Chain Forensic</span>
             </div>
           </div>
-          <p className="text-[10px] font-mono text-white/10 uppercase tracking-[0.4em]">
+          <p className="text-[10px] font-mono text-white/10 uppercase tracking-[0.4em] text-center">
             Powered by vibe-to-code Protocol
           </p>
         </footer>
