@@ -17,10 +17,10 @@
 - [x] Task 3.3: Implement real-time transaction detection (Watchdog).
 - [x] Task 3.4: Security Hardening (Webhook validation, Prompt Sanitization).
 
-## Phase 4: Ecosystem & B2B Platform (In Progress)
-- [x] Task 4.1: API Key management system (The Vault).
-- [ ] Task 4.2: Transaction simulation integration (Pre-flight checks).
-- [ ] Task 4.3: Health Report Engine (PDF generation).
+## Phase 4: Ultimate Protection (Deep Forensics)
+- [ ] Task 4.1: Transaction Simulation (Pre-flight checks).
+- [ ] Task 4.2: Visual Balance Changes (Show exactly what leaves and enters).
+- [ ] Task 4.3: Gas Price Guard (Alert if gas is too high for the transfer).
 
 ## Phase 3: Premium UI & Deployment
 - [ ] Task 3.1: Glassmorphism Frontend.

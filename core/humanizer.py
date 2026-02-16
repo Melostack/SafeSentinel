@@ -26,8 +26,11 @@ class Humanizer:
         
         PROTOCOLO NUDGE:
         1. 🧩 METÁFORA: Uma analogia simples para o problema.
-        2. 🚨 RISCO REAL: O que acontece com o dinheiro.
+        2. 🚨 RISCO REAL: O que acontece com o dinheiro (considere dados de segurança e simulação de transação).
         3. ✅ AÇÃO SUGERIDA: O que o usuário deve fazer.
+
+        IMPORTANTE: Se houver dados de SIMULAÇÃO no campo 'simulation', use-os para dizer exatamente quanto sairá e quanto chegará no destino. 
+        Se o status da simulação for 'REVERTED', avise que a transação vai falhar.
         """
 
     async def handle_interaction(self, user_input: str, gatekeeper_data: dict = None) -> str:
