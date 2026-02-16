@@ -24,7 +24,49 @@ from core.connectors.goplus_api import GoPlusConnector
 from core.sourcing_agent import SourcingAgent
 import time
 import math
+import hashlib
 from datetime import datetime
+from fastapi.security import APIKeyHeader
+from fastapi import Depends
+
+# Configuração de Segurança B2B
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def verify_api_key(api_key: str = Depends(api_key_header)):
+    """Verifica se a chave de API é válida e tem limite disponível."""
+    if not api_key:
+        # Por enquanto permite sem chave para o Bot/Front interno
+        return {"owner": "Internal", "plan": "UNLIMITED"}
+    
+    supabase = SupabaseConnector()
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    
+    try:
+        res = (supabase.client.schema("safetransfer")
+            .table("api_keys")
+            .select("*")
+            .eq("key_hash", key_hash)
+            .eq("is_active", True)
+            .execute())
+        
+        if not res.data:
+            raise HTTPException(status_code=403, detail="Invalid API Key")
+        
+        key_data = res.data[0]
+        if key_data['requests_used'] >= key_data['requests_limit']:
+            raise HTTPException(status_code=429, detail="API Key rate limit exceeded")
+        
+        # Incrementar uso (Fire and Forget para performance)
+        supabase.client.schema("safetransfer").table("api_keys").update({
+            "requests_used": key_data['requests_used'] + 1,
+            "last_used": datetime.now().isoformat()
+        }).eq("id", key_data['id']).execute()
+        
+        return key_data
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail="Auth Engine Error")
 
 app = FastAPI(
     title="SafeSentinel API",
@@ -83,7 +125,7 @@ def health_check():
     return {"status": "SafeSentinel Engine Online (Docker)", "timestamp": datetime.now().isoformat()}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, auth: dict = Depends(verify_api_key)):
     hm = Humanizer()
     intent = await hm.extract_intent(req.text)
     if not intent: raise HTTPException(status_code=400, detail="Could not interpret intent.")
@@ -103,7 +145,7 @@ async def ai_chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail=f"AI Engine Error: {str(e)}")
 
 @app.post("/find")
-async def find_route(req: SourcingRequest):
+async def find_route(req: SourcingRequest, auth: dict = Depends(verify_api_key)):
     # ... (lógica existente mantida)
     pass
 
@@ -179,7 +221,7 @@ async def alchemy_webhook(request: Request, x_alchemy_signature: str = Header(No
         return {"status": "error", "message": str(e)}
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, auth: dict = Depends(verify_api_key)):
     start_time = time.time()
     try:
         gk = Gatekeeper()
