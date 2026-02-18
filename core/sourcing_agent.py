@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -50,11 +51,12 @@ class SourcingAgent:
         }
 
         try:
-            response = requests.post(self.url, headers=headers, json=payload)
+            response = requests.post(self.url, headers=headers, json=payload, timeout=15)
             response.raise_for_status()
             data = response.json()
             return json.loads(data['choices'][0]['message']['content']), None
         except Exception as e:
+            logging.error(f"Error in SafeDiscovery: {e}")
             return None, f"Erro na busca SafeDiscovery: {str(e)}"
 
 if __name__ == "__main__":
