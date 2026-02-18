@@ -34,7 +34,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_chat_action("typing")
     
     # 1. Extrair Intenção via IA
-    intent = hm.extract_intent(text)
+    intent = await hm.extract_intent(text)
     
     if not intent or not intent.get('asset'):
         await update.message.reply_text("Entendi que você quer fazer uma transferência, mas qual é o Token e a Rede?")

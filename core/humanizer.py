@@ -1,5 +1,5 @@
 import os
-import requests
+import httpx
 import json
 
 class Humanizer:
@@ -8,7 +8,7 @@ class Humanizer:
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
-    def extract_intent(self, text):
+    async def extract_intent(self, text):
         if not self.api_key: return None
         prompt = f"""
         Analise a frase do usuário sobre transferência de criptoativos e extraia as variáveis.
@@ -16,27 +16,30 @@ class Humanizer:
         REGRAS: 1. Retorne APENAS um JSON válido. 2. Campos: asset, origin, destination, network, address.
         """
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        headers = {'Content-Type': 'application/json'}
+        headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
-            clean_json = response.json()['candidates'][0]['content']['parts'][0]['text'].replace('```json', '').replace('```', '').strip()
-            return json.loads(clean_json)
-        except: return None
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload, timeout=10.0)
+                clean_json = response.json()["candidates"][0]["content"]["parts"][0]["text"].replace("```json", "").replace("```", "").strip()
+                return json.loads(clean_json)
+        except Exception: return None
 
-    def humanize_risk(self, gatekeeper_data):
+    async def humanize_risk(self, gatekeeper_data):
         if not self.api_key: return "❌ API Key ausente."
-        risk = gatekeeper_data.get('risk', 'LOW')
+        risk = gatekeeper_data.get("risk", "LOW")
         
         if risk == "CRITICAL_DEFCON_1":
-            prompt = f"ALERTA MÁXIMO: {gatekeeper_data.get('message')}"
+            prompt = f"ALERTA MÁXIMO: {gatekeeper_data.get(message)}"
         else:
-            prompt = f"Mentor Web3: {gatekeeper_data.get('message')}"
+            prompt = f"Mentor Web3: {gatekeeper_data.get(message)}"
 
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "tools": [{"google_search_retrieval": {}}]
         }
+        headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
-            return response.json()['candidates'][0]['content']['parts'][0]['text']
-        except: return "❌ Falha crítica na interpretação de risco."
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload, timeout=10.0)
+                return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception: return "❌ Falha crítica na interpretação de risco."
