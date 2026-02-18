@@ -33,7 +33,7 @@ def home():
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):
     hm = Humanizer()
-    intent = hm.extract_intent(req.text)
+    intent = await hm.extract_intent(req.text)
     if not intent:
         raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
     return intent
@@ -60,7 +60,7 @@ async def check_transfer(req: CheckRequest):
         })
 
         if gk_res['status'] != 'SAFE':
-            explanation = hm.humanize_risk(gk_res)
+            explanation = await hm.humanize_risk(gk_res)
             return {
                 "status": gk_res['status'],
                 "risk_level": gk_res['risk'],
