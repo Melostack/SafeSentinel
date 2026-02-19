@@ -1,6 +1,10 @@
 import os
 import requests
 import json
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class Humanizer:
     def __init__(self, api_key=None):
@@ -9,7 +13,9 @@ class Humanizer:
         self.url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
     def extract_intent(self, text):
-        if not self.api_key: return None
+        if not self.api_key:
+            logger.warning("API Key is missing for extract_intent")
+            return None
         prompt = f"""
         Analise a frase do usuário sobre transferência de criptoativos e extraia as variáveis.
         FRASE: "{text}"
@@ -18,13 +24,18 @@ class Humanizer:
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         headers = {'Content-Type': 'application/json'}
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
+            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload, timeout=10) # Added timeout
+            response.raise_for_status() # Check for HTTP errors
             clean_json = response.json()['candidates'][0]['content']['parts'][0]['text'].replace('```json', '').replace('```', '').strip()
             return json.loads(clean_json)
-        except: return None
+        except Exception as e:
+            logger.error(f"Error extracting intent: {e}", exc_info=True)
+            return None
 
     def humanize_risk(self, gatekeeper_data):
-        if not self.api_key: return "❌ API Key ausente."
+        if not self.api_key:
+            logger.warning("API Key is missing for humanize_risk")
+            return "❌ API Key ausente."
         risk = gatekeeper_data.get('risk', 'LOW')
         
         if risk == "CRITICAL_DEFCON_1":
@@ -36,7 +47,11 @@ class Humanizer:
             "contents": [{"parts": [{"text": prompt}]}],
             "tools": [{"google_search_retrieval": {}}]
         }
+        headers = {'Content-Type': 'application/json'} # Fixed: defined headers
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
+            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload, timeout=10) # Added timeout
+            response.raise_for_status()
             return response.json()['candidates'][0]['content']['parts'][0]['text']
-        except: return "❌ Falha crítica na interpretação de risco."
+        except Exception as e:
+            logger.error(f"Error humanizing risk: {e}", exc_info=True)
+            return "❌ Falha crítica na interpretação de risco."
