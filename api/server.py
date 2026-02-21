@@ -3,9 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
-from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
-import os
 
 app = FastAPI()
 
