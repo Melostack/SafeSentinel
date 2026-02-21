@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends, status
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
@@ -6,6 +7,12 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import secrets
+import logging
+
+# Configure logging to prevent sensitive data leakage in stack traces
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -15,6 +22,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        logger.error("SAFE_SENTINEL_API_KEY environment variable is not set!")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server configuration error"
+        )
+
+    if not api_key_header or not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials"
+        )
+    return api_key_header
 
 class CheckRequest(BaseModel):
     asset: str
@@ -30,15 +56,19 @@ class IntentRequest(BaseModel):
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
-@app.post("/extract")
+@app.post("/extract", dependencies=[Depends(get_api_key)])
 async def extract_intent(req: IntentRequest):
-    hm = Humanizer()
-    intent = hm.extract_intent(req.text)
-    if not intent:
-        raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
-    return intent
+    try:
+        hm = Humanizer()
+        intent = hm.extract_intent(req.text)
+        if not intent:
+            raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
+        return intent
+    except Exception as e:
+        logger.error(f"Error extracting intent: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@app.post("/check")
+@app.post("/check", dependencies=[Depends(get_api_key)])
 async def check_transfer(req: CheckRequest):
     try:
         gk = Gatekeeper()
@@ -77,7 +107,9 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log the full error for debugging but don't expose it to the client
+        logger.error(f"Error checking transfer: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     import uvicorn
