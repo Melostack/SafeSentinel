@@ -5,6 +5,8 @@ from core.connectors.cmc_api import CMCConnector
 from core.connectors.ccxt_connector import CCXTConnector
 
 class Gatekeeper:
+    SUPPORTED_CEX_DESTINATIONS = ["binance", "okx", "bybit", "gateio"]
+
     def __init__(self, registry_path='core/registry/networks.json', blacklist_path='core/registry/blacklist.json'):
         # Carregar Registry Local (Para Wallets e regras fixas)
         if os.path.exists(registry_path):
@@ -100,7 +102,7 @@ class Gatekeeper:
             }
 
         # Caso o destino também seja uma CEX (Transferência entre Corretoras)
-        if destination.lower() in ["binance", "okx", "bybit", "gateio"]:
+        if destination.lower() in self.SUPPORTED_CEX_DESTINATIONS:
             dest_networks, dest_error = self.ccxt_conn.get_supported_networks(destination, asset)
             if not dest_error and dest_networks:
                 dest_match = next((n for n in dest_networks if n['network'].upper() == network.upper()), None)
