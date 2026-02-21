@@ -1,7 +1,6 @@
 import json
 import re
 import os
-from core.connectors.binance_api import BinanceConnector
 from core.connectors.cmc_api import CMCConnector
 from core.connectors.ccxt_connector import CCXTConnector
 
