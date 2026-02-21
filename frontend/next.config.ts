@@ -5,14 +5,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   async rewrites() {
     return [
       {
         source: '/api-engine/:path*',
-        destination: 'http://localhost:8000/:path*', // Mudará para o IP da VPS no futuro
+        destination: 'http://localhost:8000/:path*',
       },
     ];
   },
