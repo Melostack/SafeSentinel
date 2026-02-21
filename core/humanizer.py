@@ -1,6 +1,9 @@
 import os
 import requests
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Humanizer:
     def __init__(self, api_key=None):
@@ -21,7 +24,9 @@ class Humanizer:
             response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
             clean_json = response.json()['candidates'][0]['content']['parts'][0]['text'].replace('```json', '').replace('```', '').strip()
             return json.loads(clean_json)
-        except: return None
+        except Exception as e:
+            logger.error(f"Error extracting intent: {e}")
+            return None
 
     def humanize_risk(self, gatekeeper_data):
         if not self.api_key: return "❌ API Key ausente."
@@ -36,7 +41,10 @@ class Humanizer:
             "contents": [{"parts": [{"text": prompt}]}],
             "tools": [{"google_search_retrieval": {}}]
         }
+        headers = {'Content-Type': 'application/json'}
         try:
             response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
             return response.json()['candidates'][0]['content']['parts'][0]['text']
-        except: return "❌ Falha crítica na interpretação de risco."
+        except Exception as e:
+            logger.error(f"Error humanizing risk: {e}")
+            return "❌ Falha crítica na interpretação de risco."
