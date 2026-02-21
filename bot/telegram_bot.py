@@ -3,6 +3,8 @@ import logging
 import httpx
 from dotenv import load_dotenv
 from telegram import Update
+from telegram.constants import ParseMode
+from telegram.helpers import escape_markdown
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -89,10 +91,12 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     reason = " ".join(context.args[1:])
     
     # Aqui poderíamos salvar no Supabase. Por enquanto, confirmamos o recebimento.
-    await update.message.reply_markdown(
+    escaped_address = escape_markdown(address, version=2, entity_type='code')
+    await update.message.reply_text(
         "🛡️ *Denúncia Recebida!*\n\n"
-        f"O endereço `{address}` foi enviado para análise técnica\. "
-        "Se confirmado, ele entrará na nossa Blacklist Global em breve\. Obrigado por proteger a comunidade\!"
+        f"O endereço `{escaped_address}` foi enviado para análise técnica\\. "
+        "Se confirmado, ele entrará na nossa Blacklist Global em breve\\. Obrigado por proteger a comunidade\\!",
+        parse_mode=ParseMode.MARKDOWN_V2
     )
 
 if __name__ == '__main__':
