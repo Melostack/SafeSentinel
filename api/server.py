@@ -1,11 +1,35 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends, status
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
+import secrets
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.connectors.web3_rpc_connector import OnChainVerifier
 
 app = FastAPI()
+
+# Security Scheme
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    if not api_key_header:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Could not validate credentials"
+        )
+
+    server_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not server_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server API Key not configured"
+        )
+
+    if not secrets.compare_digest(api_key_header, server_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Could not validate credentials"
+        )
+    return api_key_header
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +52,7 @@ class IntentRequest(BaseModel):
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
-@app.post("/extract")
+@app.post("/extract", dependencies=[Depends(get_api_key)])
 async def extract_intent(req: IntentRequest):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
@@ -36,7 +60,7 @@ async def extract_intent(req: IntentRequest):
         raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
     return intent
 
-@app.post("/check")
+@app.post("/check", dependencies=[Depends(get_api_key)])
 async def check_transfer(req: CheckRequest):
     try:
         gk = Gatekeeper()
