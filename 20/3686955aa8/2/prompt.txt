@@ -1,0 +1,22 @@
+// Clean up old entries every 15 minutes to prevent memory leaks
+-setInterval(() => {
++const cleanupInterval = setInterval(() => {
+     const now = Date.now();
+     for (const [ip, data] of rateLimitMap.entries()) {
+         if (now - data.startTime > WINDOW_MS) {
+             rateLimitMap.delete(ip);
+         }
+     }
+ }, WINDOW_MS);
++
++// For graceful shutdown (if needed later):
++// process.on('SIGTERM', () => clearInterval(cleanupInterval));, Verify each finding against the current code and only fix it if needed.
+
+In `@server/server.js` around lines 15 - 28, Capture the setInterval return value
+(e.g., const rateLimitCleanupInterval = setInterval(...)) instead of discarding
+it, so you can clear it during graceful shutdown; update the existing cleanup
+block that uses WINDOW_MS and rateLimitMap to assign the interval to
+rateLimitCleanupInterval and add a call to
+clearInterval(rateLimitCleanupInterval) from your shutdown/cleanup logic (e.g.,
+in your existing process termination or server close handler) to ensure the
+interval is stopped when the server shuts down.
