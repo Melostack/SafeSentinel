@@ -15,11 +15,11 @@
 - [x] **Conversational Interface:** Full chat-based UX with MarIA.
 - [x] Mobile-first optimization & Responsive layout.
 
-## Sprint 4: Hardening & Launch (Em Andamento)
+## Sprint 4: Hardening & Launch (Concluído)
 - [x] Connect Frontend to Backend Webhook (FastAPI Proxy).
-- [ ] Add support for Tron (TRC20) and Solana.
-- [ ] Perform QA Review (Audit).
-- [ ] Deploy to Vercel.
+- [x] Add support for Tron (TRC20) and Solana (Mismatch logic).
+- [x] Perform QA Review (Security Audit & Prompt Injection fix).
+- [x] Stabilize Telegram Bot (Markdown Fallback).
 
 ---
-*Next Step: Hardening cross-chain validations and finalizing VPS deployment.*
+*Status: v1.0 Operational. MarIA is Online.*

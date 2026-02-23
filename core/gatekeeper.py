@@ -92,13 +92,20 @@ class Gatekeeper:
             pass
 
         # --- PRIORIDADE 3: Validação de Destino (Wallet/CEX) ---
-        # Lógica de Mismatch conhecida (MetaMask vs Tron)
-        if destination == "MetaMask" and network.upper() in ["TRC20", "TRX"]:
-            return {
-                "status": "MISMATCH", 
-                "risk": "CRITICAL", 
-                "message": "A MetaMask não suporta a rede Tron (TRC20). O envio resultará em perda total de fundos."
-            }
+        # Lógica de Mismatch conhecida (MetaMask vs Tron/Solana)
+        if destination == "MetaMask":
+            if network.upper() in ["TRC20", "TRX"]:
+                return {
+                    "status": "MISMATCH", 
+                    "risk": "CRITICAL", 
+                    "message": "A MetaMask não suporta a rede Tron (TRC20). O envio resultará em perda total de fundos."
+                }
+            if network.upper() in ["SOL", "SOLANA"]:
+                return {
+                    "status": "MISMATCH", 
+                    "risk": "CRITICAL", 
+                    "message": "A MetaMask não suporta a rede Solana nativa. Se você enviar via Solana, seus fundos ficarão inacessíveis."
+                }
 
         # Caso o destino também seja uma CEX (Transferência entre Corretoras)
         if destination.lower() in ["binance", "okx", "bybit", "gateio"]:

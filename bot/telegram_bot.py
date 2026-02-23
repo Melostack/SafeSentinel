@@ -23,13 +23,17 @@ FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 hm = Humanizer()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_markdown(
+    msg = (
         "🛡️ *SafeTransfer v1.1: O Oráculo de Segurança*\n\n"
         "Agora você pode falar comigo naturalmente. Exemplos:\n"
         "• _'Posso mandar USDT da Binance pra OKX via Arbitrum?'_\n"
         "• _'Quero enviar ETH da MetaMask pra Bybit pela BSC.'_\n\n"
         "Ou use /find [token] para descobrir onde comprar."
     )
+    try:
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+    except:
+        await update.message.reply_text(msg.replace("*", "").replace("_", ""))
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = update.message.text
@@ -38,7 +42,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # 1. Extrair Intenção via IA
     intent = hm.extract_intent(text)
     
-    if not intent or not intent.get('asset'):
+    if not isinstance(intent, dict) or not intent.get('asset'):
         await update.message.reply_text("Entendi que você quer fazer uma transferência, mas qual é o Token e a Rede?")
         return
 
@@ -53,7 +57,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     # 2. Consultar Backend
-    await update.message.reply_markdown(f"⏳ *Validando:* {intent['asset']} | {intent['origin']} ➔ {intent['destination']} ({intent['network']})")
+    status_msg = f"⏳ *Validando:* {escape_markdown(intent['asset'], version=2)} | {escape_markdown(intent['origin'], version=2)} ➔ {escape_markdown(intent['destination'], version=2)} ({escape_markdown(intent['network'], version=2)})"
+    await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -66,15 +71,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             }, timeout=30.0)
             
             res = response.json()
-            status_emoji = "✅" if res['risk_level'] == "LOW" else "🚨" if res['risk_level'] == "CRITICAL" else "⚠️"
+            status_emoji = "✅" if res.get('risk_level') == "LOW" else "🚨" if res.get('risk_level') == "CRITICAL" else "⚠️"
             
-            report = f"{status_emoji} *{res['title']}*\n\n"
-            report += f"{res['message']}\n\n"
-            report += f"💡 *Ação Sugerida:*\n{res['solution']}"
+            title = res.get('title', 'Resultado da Análise')
+            message = res.get('message', 'Sem detalhes adicionais.')
+            solution = res.get('solution')
+
+            report = f"{status_emoji} *{escape_markdown(title, version=2)}*\n\n"
+            report += f"{escape_markdown(message, version=2)}\n\n"
             
-            await update.message.reply_markdown(report)
+            if solution:
+                report += f"💡 *Ação Sugerida:*\n{escape_markdown(solution, version=2)}"
+            
+            try:
+                await update.message.reply_text(report, parse_mode=ParseMode.MARKDOWN_V2)
+            except Exception as e:
+                logging.error(f"Erro ao enviar Markdown: {e}")
+                # Fallback para texto plano se o Markdown falhar
+                await update.message.reply_text(report.replace("*", "").replace("_", "").replace("\\", ""))
 
     except Exception as e:
+        logging.error(f"Erro no handle_message: {e}")
         await update.message.reply_text("Desculpe, o motor de segurança está ocupado. Tente novamente.")
 
 async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
