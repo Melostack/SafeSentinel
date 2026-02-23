@@ -4,9 +4,9 @@ import json
 
 class Humanizer:
     def __init__(self, api_key=None):
-        # PROTEÇÃO: Chave agora vem estritamente do .env ou parâmetro
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
-        self.url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        # Preferencia por OpenRouter devido a estabilidade de quota
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        self.url = "https://openrouter.ai/api/v1/chat/completions"
 
     def extract_intent(self, text):
         if not self.api_key: return None
@@ -15,12 +15,18 @@ class Humanizer:
         FRASE: "{text}"
         REGRAS: 1. Retorne APENAS um JSON válido. 2. Campos: asset, origin, destination, network, address.
         """
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        headers = {'Content-Type': 'application/json'}
+        payload = {
+            "model": "google/gemini-2.0-flash-001",
+            "messages": [{"role": "user", "content": prompt}],
+            "response_format": { "type": "json_object" }
+        }
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.api_key}'
+        }
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
-            clean_json = response.json()['candidates'][0]['content']['parts'][0]['text'].replace('```json', '').replace('```', '').strip()
-            return json.loads(clean_json)
+            response = requests.post(self.url, headers=headers, json=payload)
+            return response.json()['choices'][0]['message']['content']
         except: return None
 
     def humanize_risk(self, gatekeeper_data):
@@ -28,15 +34,19 @@ class Humanizer:
         risk = gatekeeper_data.get('risk', 'LOW')
         
         if risk == "CRITICAL_DEFCON_1":
-            prompt = f"ALERTA MÁXIMO: {gatekeeper_data.get('message')}"
+            msg = f"ALERTA MÁXIMO: {gatekeeper_data.get('message')}"
         else:
-            prompt = f"Mentor Web3: {gatekeeper_data.get('message')}"
+            msg = f"Mentor Web3: {gatekeeper_data.get('message')}"
 
         payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "tools": [{"google_search_retrieval": {}}]
+            "model": "google/gemini-2.0-flash-001",
+            "messages": [{"role": "user", "content": msg}]
+        }
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.api_key}'
         }
         try:
-            response = requests.post(f"{self.url}?key={self.api_key}", headers=headers, json=payload)
-            return response.json()['candidates'][0]['content']['parts'][0]['text']
+            response = requests.post(self.url, headers=headers, json=payload)
+            return response.json()['choices'][0]['message']['content']
         except: return "❌ Falha crítica na interpretação de risco."

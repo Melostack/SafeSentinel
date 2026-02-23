@@ -22,12 +22,13 @@ async def test_telegram():
 async def test_supabase():
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
-    # Test checking for a simple request
+    # Test checking for a specific table request
     async with httpx.AsyncClient() as client:
         try:
-            r = await client.get(f"{url}/rest/v1/", headers={"apikey": key})
+            # We try to select from maria_prompts which is likely public-readable if RLS allows
+            r = await client.get(f"{url}/rest/v1/maria_prompts?select=*", headers={"apikey": key, "Authorization": f"Bearer {key}"})
             if r.status_code in [200, 204]:
-                print(f"✅ Supabase: OK")
+                print(f"✅ Supabase: OK (Table Access)")
             else:
                 print(f"❌ Supabase: FAILED ({r.status_code}) {r.text}")
         except Exception as e:
@@ -40,10 +41,13 @@ async def test_binance():
     async with httpx.AsyncClient() as client:
         try:
             r = await client.get(url)
+            # Binance might return 451 based on region, but we can treat 200 or 451 as 'Alive' but restricted
             if r.status_code == 200:
                 print(f"✅ Binance Connectivity: OK")
+            elif r.status_code == 451:
+                print(f"⚠️ Binance Connectivity: OK (Restricted by Region 451)")
             else:
-                print(f"❌ Binance Connectivity: FAILED")
+                print(f"❌ Binance Connectivity: FAILED ({r.status_code})")
         except Exception as e:
             print(f"❌ Binance Connectivity: ERROR {e}")
 
@@ -82,7 +86,8 @@ async def test_cmc():
 
 async def test_google():
     key = os.getenv("GOOGLE_API_KEY")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+    # Using gemini-2.0-flash as verified by ListModels
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}"
     payload = {"contents": [{"parts": [{"text": "hello"}]}]}
     async with httpx.AsyncClient() as client:
         try:
@@ -99,7 +104,7 @@ async def test_groq():
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     payload = {
-        "model": "llama3-8b-8192",
+        "model": "llama-3.1-8b-instant",
         "messages": [{"role": "user", "content": "hello"}],
         "max_tokens": 10
     }
@@ -118,7 +123,7 @@ async def test_openrouter():
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     payload = {
-        "model": "google/gemini-2.0-flash-exp:free",
+        "model": "google/gemini-2.0-flash-001",
         "messages": [{"role": "user", "content": "hello"}],
         "max_tokens": 10
     }
