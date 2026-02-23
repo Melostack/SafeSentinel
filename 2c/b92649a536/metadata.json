@@ -3,7 +3,7 @@
   "checkpoint_id": "2cb92649a536",
   "strategy": "manual-commit",
   "branch": "fix-telegram-input-reflection-vulnerability-4152131035540353807",
-  "checkpoints_count": 1,
+  "checkpoints_count": 8,
   "files_touched": [
     ".planning/phases/SPRINT4_SUMMARY.md",
     "ROADMAP.md",
@@ -33,13 +33,20 @@
       "context": "/2c/b92649a536/2/context.md",
       "content_hash": "/2c/b92649a536/2/content_hash.txt",
       "prompt": "/2c/b92649a536/2/prompt.txt"
+    },
+    {
+      "metadata": "/2c/b92649a536/3/metadata.json",
+      "transcript": "/2c/b92649a536/3/full.jsonl",
+      "context": "/2c/b92649a536/3/context.md",
+      "content_hash": "/2c/b92649a536/3/content_hash.txt",
+      "prompt": "/2c/b92649a536/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 816094,
+    "input_tokens": 8303979,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 704568,
-    "output_tokens": 4042,
-    "api_call_count": 19
+    "cache_read_tokens": 7493203,
+    "output_tokens": 19651,
+    "api_call_count": 90
   }
 }

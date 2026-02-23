@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "2cb92649a536",
+  "session_id": "da91824b-7099-4e94-9a0c-813a82ea4bc8",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-23T14:59:25.007093822Z",
+  "branch": "fix-telegram-input-reflection-vulnerability-4152131035540353807",
+  "checkpoints_count": 7,
+  "files_touched": [
+    ".planning/phases/SPRINT4_SUMMARY.md",
+    "ROADMAP.md",
+    "bot/telegram_bot.py",
+    "core/gatekeeper.py",
+    "core/humanizer.py",
+    "scripts/final_gsd_validation.py"
+  ],
+  "agent": "Gemini CLI",
+  "turn_id": "70483102ad70",
+  "transcript_identifier_at_start": "349986fe-ba62-4308-ac40-78aa70305eff",
+  "checkpoint_transcript_start": 53,
+  "transcript_lines_at_start": 53,
+  "token_usage": {
+    "input_tokens": 7487885,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6788635,
+    "output_tokens": 15609,
+    "api_call_count": 71
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-23T14:59:23.434973426Z",
+    "agent_lines": 102,
+    "human_added": 29,
+    "human_modified": 21,
+    "human_removed": 0,
+    "total_committed": 152,
+    "agent_percentage": 67.10526315789474
+  },
+  "transcript_path": ".gemini/tmp/safesentinel/chats/session-2026-02-22T23-29-da91824b.json"
+}
