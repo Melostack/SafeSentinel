@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.connectors.web3_rpc_connector import OnChainVerifier
@@ -15,14 +15,14 @@ app.add_middleware(
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=50)
+    origin: str = Field(..., max_length=50)
+    destination: str = Field(..., max_length=50)
+    network: str = Field(..., max_length=50)
+    address: str = Field(..., max_length=100)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
