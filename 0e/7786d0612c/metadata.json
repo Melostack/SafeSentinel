@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "0e7786d0612c",
+  "strategy": "manual-commit",
+  "branch": "fix-telegram-input-reflection-vulnerability-4152131035540353807",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".planning/phases/07-frontend-refactor/PLAN.md",
+    "frontend/components.json",
+    "frontend/next-env.d.ts",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/src/app/globals.css",
+    "frontend/src/app/page.tsx",
+    "frontend/src/components/ui/particles.tsx",
+    "frontend/src/components/ui/rainbow-button.tsx",
+    "frontend/src/lib/utils.ts",
+    "frontend/tailwind.config.ts",
+    "frontend/tsconfig.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0e/7786d0612c/0/metadata.json",
+      "transcript": "/0e/7786d0612c/0/full.jsonl",
+      "context": "/0e/7786d0612c/0/context.md",
+      "content_hash": "/0e/7786d0612c/0/content_hash.txt",
+      "prompt": "/0e/7786d0612c/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 816094,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 704568,
+    "output_tokens": 4042,
+    "api_call_count": 19
+  }
+}

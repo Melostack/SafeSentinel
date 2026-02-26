@@ -1,0 +1,11 @@
+olá, precisamos trocar as apis do agente pois tinha ocorrido um vazamento ao irpara o repositorio, vou mandar as novas apis, ai vamos configurar elas em sistema de cascata onde a primeira falha ja conecta na segunda.. ok? TELEGRAM_BOT_TOKEN=REDACTED                                                                                                                          │
+│ FASTAPI_URL=http://localhost:8000                                                                                                                                                          │
+│ SUPABASE_URL=https://hfiibeebeptzckavvska.supabase.co                                                                                                                                      │
+│ REDACTED                                                                                                                                │
+│ REDACTED                                                                                                           │
+│ REDACTED                                                                                                        │
+│ REDACTED                                                                                                                   │
+│ CMC_API_KEY=REDACTED                                                                                                                                               │
+│ REDACTED                                                                                                                                     │
+│ REDACTED                                                                                               │
+│ REDACTED , faça um teste para ver se essas apis estão funcionando.... pfvr talvez tenha tido algumas atualizações no projeto verifique no repositorio com git status veja se estamos com o contexto atualizado, depois configurar a api confirendo se esta tudo rodando vamos rodar o protocolo gsd e ver se tem phase aberta e finalizar para iniciar os proximos
