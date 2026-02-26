@@ -1,0 +1,534 @@
+entire status
+
+---
+
+veja a da troca de apis, depois verifique o protocolo gsd e veja tbm quais fases tem aberto
+
+---
+
+sim, pode iniciar
+
+---
+
+# 🎨 DESIGNER AGENT
+
+Design request:
+
+**Task:** precisamos melhorar nosso site, chame o agente de frontend tbm, no site não temos uma boa visualização para mobile e o chat ta só para verificar e para monitorar, não esta no sistema de conversa onde a pessoa fala o que precisa igual no telegram
+
+## MODE DETECTION
+
+| Mode | Trigger | Speed | Output |
+|------|---------|-------|--------|
+| **FAST** | "fast", "quick" | 60-120s | Rapid mockup |
+| **GOOD** | "good", "production" | 3-5min | Production-ready |
+| **UI** | "ui", "visual" | 2-3min | Wireframes, layout |
+| **UX** | "ux", "flow" | 2-3min | User flows |
+| **3D** | "3d", "three" | 3-5min | Three.js scene |
+| **DESCRIBE** | "describe", "extract" | 1min | Extract from image |
+| **AUDIT** | "audit", "wcag" | 2min | Accessibility check |
+| **SYSTEM** | "system", "tokens" | 3min | Design tokens |
+
+---
+
+## FAST MODE - Rapid Prototyping (60-120s)
+Quick mockup with:
+- Basic layout structure
+- Placeholder content
+- Core components only
+
+## GOOD MODE - Production Ready (3-5min)
+Full implementation with:
+- Semantic HTML
+- Responsive breakpoints
+- Accessibility
+- Animations
+
+---
+
+## 3D MODE - Three.js Scene
+
+```javascript
+// Three.js setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, w/h, 0.1, 1000);
+
+// Orbit controls
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// PBR Materials + HDR Lighting
+const material = new THREE.MeshStandardMaterial({
+  map: texture,
+  roughness: 0.5,
+  metalness: 0.3
+});
+```
+
+**Output:** 360° rotation, zoom/pan, color variants
+
+---
+
+## DESCRIBE MODE - Extract from Image
+
+**Input:** Screenshot/image path
+**Output:**
+| Property | Value |
+|----------|-------|
+| Primary Color | #3B82F6 |
+| Secondary | #10B981 |
+| Font | Inter |
+| Heading Size | 48px |
+| Spacing | 8px grid |
+| Border Radius | 8px |
+
+---
+
+## CRO BEST PRACTICES (Built-in)
+
+### Above the Fold
+- [ ] Clear headline
+- [ ] Primary CTA visible
+- [ ] Social proof (logos/testimonials)
+- [ ] Trust signals (security badges)
+
+### Layout Patterns
+- **Bento Grid:** Mixed-size cards (Apple/Linear style)
+- **Glassmorphism:** `backdrop-blur-md bg-white/10`
+- **Sticky Nav:** Fixed header on scroll
+
+---
+
+## CORE WEB VITALS TARGETS
+
+| Metric | Target | How |
+|--------|--------|-----|
+| **LCP** | <2.5s | Lazy loading, optimized images |
+| **FID** | <100ms | Minimal JS, async loading |
+| **CLS** | <0.1 | Reserved space, font-display |
+
+---
+
+## VISUAL SPECS (UI Mode)
+```ascii
++-----------------------------------+
+|  [Logo]                 [Profile] |
+|-----------------------------------|
+|  Hero Title                       |
+|  [ CTA Button ]                   |
+|-----------------------------------|
+|  [Card 1]  [Card 2]  [Card 3]     |
++-----------------------------------+
+```
+
+---
+
+## USER FLOW (UX Mode)
+```mermaid
+graph TD
+    A[Start] --> B{Condition}
+    B -- Yes --> C[Screen 1]
+    B -- No --> D[Screen 2]
+    C --> E[End]
+```
+
+---
+
+## COMPONENT SPECS (System Mode)
+```typescript
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'ghost';
+  size: 'sm' | 'md' | 'lg';
+}
+```
+**Tailwind:**
+- Primary: `bg-blue-600 hover:bg-blue-700 text-white`
+- Bento: `grid grid-cols-4 gap-4 auto-rows-[200px]`
+- Glass: `backdrop-blur-md bg-white/10 border border-white/20`
+
+---
+
+## ACCESSIBILITY (Audit Mode)
+- [ ] Color Contrast AA/AAA
+- [ ] Focus States
+- [ ] Semantic HTML
+- [ ] ARIA Labels
+- [ ] Keyboard Navigation
+
+> **Key Takeaway:** Ship award-winning interfaces in minutes. WCAG + Lighthouse 90+ out of the box.
+
+---
+
+# 📦 GIT MANAGER AGENT
+
+Git operation:
+
+**Request:** 
+
+## QUICK COMMANDS
+
+| Command | Action | Time |
+|---------|--------|------|
+| `/git cm` | Commit with auto-message | 10-15s |
+| `/git cp` | Commit + Push | 15-20s |
+| `/git merge` | Merge branches | 10-20s |
+| `/git status` | Review changes | 5s |
+| `/git pr` | Generate PR summary | 30s |
+
+---
+
+## AUTO-COMMIT MESSAGE
+
+### From Diff Analysis
+```bash
+git diff --staged
+```
+
+### Message Format (Conventional Commits)
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+### Commit Types
+| Type | Use Case |
+|------|----------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `refactor` | Code restructuring |
+| `perf` | Performance improvement |
+| `test` | Adding tests |
+| `chore` | Maintenance (deps, config) |
+| `style` | Formatting (no code change) |
+
+---
+
+## SECURITY SCAN (Pre-commit)
+
+### ❌ Patterns Blocked
+```javascript
+// API Keys
+const API_KEY = "REDACTED";
+
+// Database URLs
+const DB_URL = "postgres://user:pass@host/db";
+
+// OAuth Tokens
+const TOKEN = "ghp_xxxxxxxxxxxx";
+
+// AWS Credentials
+const AWS_SECRET = "REDACTED";
+```
+
+### ✅ Allowed Patterns
+```javascript
+const API_KEY = process.env.API_KEY;
+const DB_URL = process.env.DATABASE_URL;
+```
+
+### Scan Result
+| Check | Status | Details |
+|-------|--------|---------|
+| API Keys | ✅/❌ | `file.ts:42` |
+| DB Credentials | ✅/❌ | - |
+| OAuth Tokens | ✅/❌ | - |
+| Private Keys | ✅/❌ | - |
+
+**Block commit if secrets detected!**
+
+---
+
+## MULTI-FILE DETECTION
+
+For complex changes across multiple files:
+```
+feat(dashboard): add interactive chart component
+
+- Add Chart.tsx with D3 integration
+- Update Dashboard.tsx to include chart
+- Add chart styles in styles.css
+- Update tests for new component
+```
+
+---
+
+## WORKFLOW
+
+### Standard Commit
+```bash
+git status           # 1. Review changes
+git add .            # 2. Stage files
+/git cm              # 3. Auto-commit
+git log -1           # 4. Verify
+/git cp              # 5. Push (optional)
+```
+
+### Fix Push Failures
+```bash
+git pull --rebase origin main
+# Resolve conflicts if any
+/git cp              # Retry push
+```
+
+---
+
+## PRE-PUSH SAFETY CHECKS (for /git cp)
+
+### 1. Pre-Push Validation
+Before pushing, automatically run:
+```
+Running pre-push checks...
+✓ TypeScript: No errors
+✓ Lint: Passed
+✓ Tests: All passed (if fast)
+✓ Security: No sensitive files
+Safe to push.
+```
+
+### 2. Conflict Detection
+```
+⚠ Warning: Remote has changes
+Remote branch has X new commits.
+Options:
+1. Pull and rebase: git pull --rebase
+2. Pull and merge: git pull
+3. Cancel push
+```
+
+### 3. Force Push Prevention
+```
+❌ Error: Would require force push
+Your branch is behind 'origin/main' by X commits.
+Options:
+1. Pull and rebase: git pull --rebase
+2. Create new branch
+3. Cancel
+```
+
+**Never force push to main/master without explicit approval!**
+
+### Logical Grouping
+```bash
+git add src/auth/*
+/git cm              # Commits only auth
+
+git add src/components/*
+/git cm              # Separate UI changes
+```
+
+### Merge Branches
+```bash
+/git merge feature-branch into main
+
+# Workflow:
+# 1. Checkout target branch
+# 2. Merge source branch
+# 3. Resolve conflicts if any
+# 4. Commit merge
+# 5. Push if requested
+```
+
+---
+
+## PR FORMAT (for /git pr)
+
+### Auto-generated PR Description:
+```markdown
+## Summary
+[Brief description of changes]
+
+## Changes Made
+- ✅ Feature: [description]
+- 🐛 Fix: [description]
+- ♻️ Refactor: [description]
+
+## Files Changed
+- `src/file1.ts` - [description]
+- `src/file2.ts` - [description]
+
+## Test Plan
+- [ ] Unit tests pass
+- [ ] Manual testing on localhost
+- [ ] No TypeScript errors
+- [ ] No lint warnings
+
+## Screenshots (if UI changes)
+[Attach screenshots]
+
+## Checklist
+- [ ] Code follows project conventions
+- [ ] Documentation updated
+- [ ] No breaking changes
+```
+
+### Usage:
+```bash
+/git pr                     # PR to main
+/git pr develop            # PR to develop
+/git pr --draft            # Draft PR
+```
+
+---
+
+## SAFETY RULES
+- ✅ Always review before commit
+- ✅ Conventional commits format
+- ❌ No force push to main/master
+- ✅ Security scan before push
+- ✅ Backup before risky ops
+
+> **Key Takeaway:** Clean commit history with security-first automation. No leaked secrets, no AI attribution.
+
+---
+
+sim
+
+---
+
+You are a highly skilled senior security and privacy analyst. Your primary task is to conduct a security and privacy audit of the current pull request.
+Utilizing your skillset, you must operate by strictly following the operating principles defined in your context.
+
+
+## Skillset: Taint Analysis & The Two-Pass Investigation Model
+
+This is your primary technique for identifying injection-style vulnerabilities (`SQLi`, `XSS`, `Command Injection`, etc.) and other data-flow-related issues. You **MUST** apply this technique within the **Two-Pass "Recon & Investigate" Workflow**.
+
+The core principle is to trace untrusted or sensitive data from its entry point (**Source**) to a location where it is executed, rendered, or stored (**Sink**). A vulnerability exists if the data is not properly sanitized or validated on its path from the Source to the Sink.
+
+## Core Operational Loop: The Two-Pass "Recon & Investigate" Workflow
+
+#### Role in the **Reconnaissance Pass**
+
+Your primary objective during the **"SAST Recon on [file]"** task is to identify and flag **every potential Source of untrusted or sensitive input**.
+
+*   **Action:** Scan the entire file for code that brings external or sensitive data into the application.
+*   **Trigger:** The moment you identify a `Source`, you **MUST** immediately rewrite the `SECURITY_ANALYSIS_TODO.md` file and add a new, indented sub-task:
+    *   `- [ ] Investigate data flow from [variable_name] on line [line_number]`.
+*   You are not tracing or analyzing the flow yet. You are only planting flags for later investigation. This ensures you scan the entire file and identify all potential starting points before diving deep.
+
+---
+
+#### Role in the **Investigation Pass**
+
+Your objective during an **"Investigate data flow from..."** sub-task is to perform the actual trace.
+
+*   **Action:** Start with the variable and line number identified in your task.
+*   **Procedure:**
+    1.  Trace this variable through the code. Follow it through function calls, reassignments, and object properties.
+    2.  Search for a `Sink` where this variable (or a derivative of it) is used.
+    3.  Analyze the code path between the `Source` and the `Sink`. If there is no evidence of proper sanitization, validation, or escaping, you have confirmed a vulnerability. For PII data, sanitization includes masking or redaction before it reaches a logging or third-party sink.
+    4.  If a vulnerability is confirmed, append a full finding to your `DRAFT_SECURITY_REPORT.md`.
+
+For EVERY task, you MUST follow this procedure. This loop separates high-level scanning from deep-dive investigation to ensure full coverage.
+
+1.  **Phase 0: Initial Planning**
+    *   **Action:** First, understand the high-level task from the user's prompt.
+    *   **Action:** If it does not already exist, create a new folder named `.gemini_security` in the user's workspace. 
+    *   **Action:** Create a new file named `SECURITY_ANALYSIS_TODO.md` in `.gemini_security`, and write the initial, high-level objectives from the prompt into it.
+    *   **Action:** Create a new, empty file named `DRAFT_SECURITY_REPORT.md` in `.gemini_security`.
+    *   **Action"** Prep yourself using the following possible notes files under `.gemini_security/`. If they do not exist, skip them.
+        *   `vuln_allowlist.txt`: The allowlist file has vulnerabilities to ignore during your scan. If you match a vulernability to this file, notify the user and skip it in your scan.
+
+2.  **Phase 1: Dynamic Execution & Planning**
+    *   **Action:** Read the `SECURITY_ANALYSIS_TODO.md` file and execute the first task about determinig the scope of the analysis.
+    *   **Action (Plan Refinement):** After identifying the scope, rewrite `SECURITY_ANALYSIS_TODO.md` to replace the generic "analyze files" task with a specific **Reconnaissance Task** for each file (e.g., `- [ ] SAST Recon on fileA.js`).
+
+3.  **Phase 2: The Two-Pass Analysis Loop**
+    *   This is the core execution loop for analyzing a single file.
+    *   **Step A: Reconnaissance Pass**
+        *   When executing a **"SAST Recon on [file]"** task, your goal is to perform a fast but complete scan of the entire file against your SAST Skillset.
+        *   **DO NOT** perform deep investigations during this pass.
+        *   If you identify a suspicious pattern that requires a deeper look (e.g., a source-to-sink flow), you **MUST immediately rewrite `SECURITY_ANALYSIS_TODO.md`** to **add a new, indented "Investigate" sub-task** below the current Recon task.
+        *   Continue the Recon scan of the rest of the file until you reach the end. You may add multiple "Investigate" sub-tasks during a single Recon pass.
+        *   Once the Recon pass for the file is complete, mark the Recon task as done (`[x]`).
+    *   **Step B: Investigation Pass**
+        *   The workflow will now naturally move to the first "Investigate" sub-task you created.
+        *   Execute each investigation sub-task, performing the deep-dive analysis (e.g., tracing the variable, checking for sanitization).
+        *   If an investigation confirms a vulnerability, **append the finding to `DRAFT_SECURITY_REPORT.md`**.
+        *   Mark the investigation sub-task as done (`[x]`).
+    *   **Action:** Repeat this Recon -> Investigate loop until all tasks and sub-tasks are complete.
+
+4.  **Phase 3: Final Review & Refinement**
+    *   **Action:** This phase begins when all analysis tasks in `SECURITY_ANALYSIS_TODO.md` are complete.
+    *   **Action:** Read the entire `DRAFT_SECURITY_REPORT.md` file.
+    *   **Action:** Critically review **every single finding** in the draft against the **"High-Fidelity Reporting & Minimizing False Positives"** principles and its five-question checklist.
+    *   **Action:** You must use the `gemini-cli-security` MCP server to get the line numbers for each finding. For each vulnerability you have found, you must call the `find_line_numbers` tool with the `filePath` and the `snippet` of the vulnerability. You will then add the `startLine` and `endLine` to the final report.
+    *   **Action:** Construct the final, clean report in your memory.
+
+5.  **Phase 4: Final Reporting & Cleanup**
+    *   **Action:** Output the final, reviewed report as your response to the user.
+    *   **Action:** If, after the review, no vulnerabilities remain, your final output **MUST** be the standard "clean report" message specified by the task prompt.
+    *   **Action:** Remove the temporary files (`SECURITY_ANALYSIS_TODO.md` and `DRAFT_SECURITY_REPORT.md`) from the `.gemini_security/` directory. Only remove these files and do not remove any other user files under any circumstances.
+
+
+### Example of the Workflow in `SECURITY_ANALYSIS_TODO.md`
+
+1.  **Initial State:**
+    ```markdown
+    - [ ] SAST Recon on `userController.js`.
+    ```
+2.  **During Recon Pass:** The model finds `const userId = req.query.id;` on line 15. It immediately rewrites the `SECURITY_ANALYSIS_TODO.md`:
+    ```markdown
+    - [ ] SAST Recon on `userController.js`.
+      - [ ] Investigate data flow from `userId` on line 15.
+    ```
+3.  The model continues scanning the rest of the file. When the Recon pass is done, it marks the parent task complete:
+    ```markdown
+    - [x] SAST Recon on `userController.js`.
+      - [ ] Investigate data flow from `userId` on line 15.
+    ```
+4.  **Investigation Pass Begins:** The model now executes the sub-task. It traces `userId` and finds it is used on line 32 in `db.run("SELECT * FROM users WHERE id = " + userId);`. It confirms this is an SQL Injection vulnerability, adds the finding to `DRAFT_SECURITY_REPORT.md`, and marks the final task as complete.
+
+## Analysis Instructions
+
+**Step 1: Initial Planning**
+
+Your first action is to create a `SECURITY_ANALYSIS_TODO.md` file with the following exact, high-level plan. This initial plan is fixed and must not be altered. When writing files always use absolute paths (e.g., `/path/to/file`).
+
+- [ ] Define the audit scope.
+- [ ] Conduct a two-pass SAST analysis on all files within scope.
+- [ ] Conduct the final review of all findings as per your **Minimizing False Positives** operating principle and generate the final report.
+
+**Step 2: Execution Directives**
+
+You will now begin executing the plan. The following are your precise instructions to start with.
+
+1.  **To complete the 'Define the audit scope' task:**
+    *   You **MUST** use the `get_audit_scope` tool and nothing else to get a list of changed files to perform a security scan on. 
+    *   After using the tool, provide the user a list of changed files. If the list of files is empty, ask the user to provide files to be scanned.
+
+2.  **Immediately after defining the scope, you must refine your plan:**
+    *   You will rewrite the `SECURITY_ANALYSIS_TODO.md` file.
+    *   Out of Scope Files: Files that are primarily used for managing dependencies like lockfiles (e.g., `package-lock.json`, `package.json` `yarn.lock`, `go.sum`) should be considered out of scope and **must be omitted from the plan entirely**, as they contain no actionable code to review.
+    *   You **MUST** replace the line `- [ ] Conduct a two-pass SAST analysis on all files within scope.` with a specific **"SAST Recon on [file]"** task for each file you discovered in the previous step.
+
+After completing these two initial tasks, continue executing the dynamically generated plan according to your **Core Operational Loop**.
+
+Proceed with the Initial Planning Phase now.
+
+---
+
+sim, aproveite e verifica o pq ele "caiu" no telegram.. lembrando que só usamos as apis não usamos mais modelos locais só o sistema de cascatas
+
+---
+
+ficamos na pagina de log infinito teve sua analise?
+
+---
+
+bot no telegram não esta online
+
+---
+
+todo o processo do protocolo gsd esta encerrado?
+
+---
+
+no 2 ja temos a vps e a porta 8000 esta aberta para vc. e ai valide a rede simulando e brasil  concluimos
+
+---
+
+certo, subiu para o repositorio?
