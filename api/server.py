@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends, status
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
@@ -6,6 +7,10 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import secrets
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -15,6 +20,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        # Fail securely if no key is configured
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="API Key configuration missing on server."
+        )
+
+    if not api_key_header or not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials"
+        )
+    return api_key_header
 
 class CheckRequest(BaseModel):
     asset: str
@@ -31,7 +55,7 @@ def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +63,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
