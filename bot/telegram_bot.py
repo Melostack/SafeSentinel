@@ -13,6 +13,10 @@ from telegram.ext import (
     filters,
 )
 from core.humanizer import Humanizer
+import sys
+
+# Add project root to sys.path to allow importing from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 load_dotenv()
 
@@ -20,6 +24,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
+SAFE_SENTINEL_API_KEY = os.getenv("SAFE_SENTINEL_API_KEY")
+
 hm = Humanizer()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -60,16 +66,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     status_msg = f"⏳ *Validando:* {escape_markdown(intent['asset'], version=2)} | {escape_markdown(intent['origin'], version=2)} ➔ {escape_markdown(intent['destination'], version=2)} ({escape_markdown(intent['network'], version=2)})"
     await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
+    headers = {}
+    if SAFE_SENTINEL_API_KEY:
+        headers["X-API-Key"] = SAFE_SENTINEL_API_KEY
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{FASTAPI_URL}/check", json={
-                "asset": intent['asset'],
-                "origin": intent['origin'],
-                "destination": intent['destination'],
-                "network": intent['network'],
-                "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
-            }, timeout=30.0)
+            response = await client.post(
+                f"{FASTAPI_URL}/check",
+                json={
+                    "asset": intent['asset'],
+                    "origin": intent['origin'],
+                    "destination": intent['destination'],
+                    "network": intent['network'],
+                    "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
+                },
+                headers=headers,
+                timeout=30.0
+            )
             
+            if response.status_code == 403:
+                await update.message.reply_text("🚨 Erro de Autenticação: O Bot não tem permissão para acessar o Oráculo.")
+                return
+
             res = response.json()
             status_emoji = "✅" if res.get('risk_level') == "LOW" else "🚨" if res.get('risk_level') == "CRITICAL" else "⚠️"
             
