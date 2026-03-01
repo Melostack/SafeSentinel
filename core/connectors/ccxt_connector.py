@@ -23,6 +23,10 @@ class CCXTConnector:
     def get_exchange_instance(self, exchange_id):
         exchange_id = exchange_id.lower()
         if exchange_id not in self.exchanges:
+            # SECURITY: Prevent arbitrary code execution by validating exchange_id
+            if exchange_id not in ccxt.exchanges:
+                return None
+
             try:
                 exchange_class = getattr(ccxt, exchange_id)
                 self.exchanges[exchange_id] = exchange_class({
