@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from functools import lru_cache
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
@@ -26,25 +27,37 @@ class CheckRequest(BaseModel):
 class IntentRequest(BaseModel):
     text: str
 
+@lru_cache()
+def get_gatekeeper():
+    return Gatekeeper()
+
+@lru_cache()
+def get_humanizer():
+    return Humanizer()
+
+@lru_cache()
+def get_verifier():
+    return OnChainVerifier()
+
 @app.get("/")
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
-    hm = Humanizer()
+async def extract_intent(req: IntentRequest, hm: Humanizer = Depends(get_humanizer)):
     intent = hm.extract_intent(req.text)
     if not intent:
         raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(
+    req: CheckRequest,
+    gk: Gatekeeper = Depends(get_gatekeeper),
+    hm: Humanizer = Depends(get_humanizer),
+    rpc: OnChainVerifier = Depends(get_verifier)
+):
     try:
-        gk = Gatekeeper()
-        hm = Humanizer()
-        rpc = OnChainVerifier()
-
         # 1. Validação On-Chain (RPC)
         on_chain_data = rpc.verify_address(req.address, req.network)
 
