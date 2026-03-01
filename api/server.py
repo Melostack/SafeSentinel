@@ -1,11 +1,17 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import secrets
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -17,21 +23,33 @@ app.add_middleware(
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=100)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=100)
+    address: str = Field(..., max_length=200)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=2000)
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        logger.error("CRITICAL: SAFE_SENTINEL_API_KEY is not set in environment.")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    if not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
+    return api_key_header
 
 @app.get("/")
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +57,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
@@ -77,7 +95,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error processing transfer check: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     import uvicorn
