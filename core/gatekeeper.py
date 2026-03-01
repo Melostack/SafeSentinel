@@ -6,20 +6,31 @@ from core.connectors.cmc_api import CMCConnector
 from core.connectors.ccxt_connector import CCXTConnector
 
 class Gatekeeper:
+    _registry_cache = {}
+    _blacklist_cache = {}
+
     def __init__(self, registry_path='core/registry/networks.json', blacklist_path='core/registry/blacklist.json'):
         # Carregar Registry Local (Para Wallets e regras fixas)
-        if os.path.exists(registry_path):
-            with open(registry_path, 'r') as f:
-                self.registry = json.load(f)
+        if registry_path in self._registry_cache:
+            self.registry = self._registry_cache[registry_path]
         else:
-            self.registry = {"wallets": {}, "exchanges": {}}
+            if os.path.exists(registry_path):
+                with open(registry_path, 'r') as f:
+                    self.registry = json.load(f)
+            else:
+                self.registry = {"wallets": {}, "exchanges": {}}
+            self._registry_cache[registry_path] = self.registry
         
         # Carregar Blacklist
-        if os.path.exists(blacklist_path):
-            with open(blacklist_path, 'r') as f:
-                self.blacklist = json.load(f)
+        if blacklist_path in self._blacklist_cache:
+            self.blacklist = self._blacklist_cache[blacklist_path]
         else:
-            self.blacklist = []
+            if os.path.exists(blacklist_path):
+                with open(blacklist_path, 'r') as f:
+                    self.blacklist = json.load(f)
+            else:
+                self.blacklist = []
+            self._blacklist_cache[blacklist_path] = self.blacklist
 
         self.patterns = {
             "EVM": r"^0x[a-fA-F0-9]{40}$",
