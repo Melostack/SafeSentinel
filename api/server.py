@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Security, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import secrets
 
 app = FastAPI()
 
@@ -15,6 +17,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+API_KEY_NAME = "X-API-Key"
+api_key_header_scheme = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_token: str = Security(api_key_header_scheme)):
+    if not api_key_token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API Key missing"
+        )
+
+    expected_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server authentication configuration missing"
+        )
+
+    if not secrets.compare_digest(api_key_token, expected_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API Key"
+        )
+    return api_key_token
 
 class CheckRequest(BaseModel):
     asset: str
@@ -30,7 +56,7 @@ class IntentRequest(BaseModel):
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
-@app.post("/extract")
+@app.post("/extract", dependencies=[Depends(get_api_key)])
 async def extract_intent(req: IntentRequest):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
@@ -38,7 +64,7 @@ async def extract_intent(req: IntentRequest):
         raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
     return intent
 
-@app.post("/check")
+@app.post("/check", dependencies=[Depends(get_api_key)])
 async def check_transfer(req: CheckRequest):
     try:
         gk = Gatekeeper()
@@ -76,6 +102,8 @@ async def check_transfer(req: CheckRequest):
             "message": "A rota selecionada foi validada e está livre de riscos conhecidos.",
             "on_chain": on_chain_data
         }
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
