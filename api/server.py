@@ -9,9 +9,14 @@ import os
 
 app = FastAPI()
 
+# Configuração de CORS
+# Uses os.getenv to get ALLOWED_ORIGINS, defaulting to http://localhost:3000
+# Splits by comma and strips whitespace to handle "http://a.com, http://b.com"
+ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
