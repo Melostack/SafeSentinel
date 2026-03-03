@@ -1,11 +1,30 @@
-from fastapi import FastAPI, HTTPException
+import os
+import secrets
+import logging
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
-import os
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        logger.error("SAFE_SENTINEL_API_KEY is not set in environment variables.")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    if not api_key_header or not secrets.compare_digest(api_key_header, expected_api_key):
+        logger.warning("Unauthorized access attempt.")
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
+    return api_key_header
 
 app = FastAPI()
 
@@ -31,7 +50,7 @@ def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +58,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
@@ -77,7 +96,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error checking transfer: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     import uvicorn
