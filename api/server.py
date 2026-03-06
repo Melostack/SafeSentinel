@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException
+import logging
+import secrets
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
@@ -7,7 +10,20 @@ from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
 
+logging.basicConfig(level=logging.INFO)
+
 app = FastAPI()
+
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+async def get_api_key(api_key_header: str = Depends(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        logging.error("SAFE_SENTINEL_API_KEY environment variable is not set.")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    if not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
+    return api_key_header
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,7 +47,7 @@ def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +55,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
@@ -77,7 +93,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error("Error in check_transfer", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     import uvicorn

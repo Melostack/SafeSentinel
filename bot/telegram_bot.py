@@ -20,6 +20,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
+SAFE_SENTINEL_API_KEY = os.getenv("SAFE_SENTINEL_API_KEY", "")
 hm = Humanizer()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -62,13 +63,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{FASTAPI_URL}/check", json={
-                "asset": intent['asset'],
-                "origin": intent['origin'],
-                "destination": intent['destination'],
-                "network": intent['network'],
-                "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
-            }, timeout=30.0)
+            response = await client.post(
+                f"{FASTAPI_URL}/check",
+                json={
+                    "asset": intent['asset'],
+                    "origin": intent['origin'],
+                    "destination": intent['destination'],
+                    "network": intent['network'],
+                    "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
+                },
+                headers={"X-API-Key": SAFE_SENTINEL_API_KEY},
+                timeout=30.0
+            )
             
             res = response.json()
             status_emoji = "✅" if res.get('risk_level') == "LOW" else "🚨" if res.get('risk_level') == "CRITICAL" else "⚠️"
