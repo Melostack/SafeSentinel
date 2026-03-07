@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
@@ -6,6 +7,12 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import secrets
+import logging
+
+# Ensure root logger is set up if not already
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -26,12 +33,29 @@ class CheckRequest(BaseModel):
 class IntentRequest(BaseModel):
     text: str
 
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if not expected_api_key:
+        logger.error("SAFE_SENTINEL_API_KEY environment variable is not set.")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    if not api_key_header:
+        raise HTTPException(status_code=403, detail="Missing API Key")
+
+    if not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+
+    return api_key_header
+
 @app.get("/")
 def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +63,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
@@ -77,7 +101,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 if __name__ == "__main__":
     import uvicorn
