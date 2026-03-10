@@ -1,0 +1,4 @@
+## 2026-03-10 - [Missing Authentication on Core Internal API Endpoints]
+**Vulnerability:** The FastAPI endpoints /check and /extract lacked authentication, allowing unauthorized users to execute logic that queries external APIs (LLM quota via OpenRouter/Perplexity). This poses a CRITICAL security risk of DoS and API quota depletion.
+**Learning:** Internal APIs orchestrating paid and rate-limited external services must always be authenticated, even if temporarily configured as internal microservices, as network boundaries can change or be misconfigured.
+**Prevention:** Always implement standard token or API key authentication (like APIKeyHeader) for all endpoints by default, reading keys securely from the environment using constant-time comparison (secrets.compare_digest) to prevent timing attacks.
