@@ -27,8 +27,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "🛡️ *SafeTransfer v1.1: O Oráculo de Segurança*\n\n"
         "Agora você pode falar comigo naturalmente. Exemplos:\n"
         "• _'Posso mandar USDT da Binance pra OKX via Arbitrum?'_\n"
-        "• _'Quero enviar ETH da MetaMask pra Bybit pela BSC.'_\n\n"
-        "Ou use /find [token] para descobrir onde comprar."
+        "• _'Quero enviar ETH da MetaMask pra Bybit pela BSC.'_"
     )
     try:
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
@@ -94,9 +93,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logging.error(f"Erro no handle_message: {e}")
         await update.message.reply_text("Desculpe, o motor de segurança está ocupado. Tente novamente.")
 
-async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Reaproveitar a lógica de busca anterior
-    pass
 
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Recebe denúncias da comunidade."""
@@ -121,7 +117,6 @@ if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN_BOT).build()
 
     app.add_handler(CommandHandler('start', start))
-    app.add_handler(CommandHandler('find', find_command))
     app.add_handler(CommandHandler('report', report_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
