@@ -20,6 +20,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
+SAFE_SENTINEL_API_KEY = os.getenv("SAFE_SENTINEL_API_KEY", "")
 hm = Humanizer()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -32,7 +33,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     try:
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
-    except:
+    except Exception as e:
+        logging.error(f"Erro ao enviar Markdown na saudação: {e}", exc_info=True)
         await update.message.reply_text(msg.replace("*", "").replace("_", ""))
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -61,8 +63,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     try:
+        headers = {}
+        if SAFE_SENTINEL_API_KEY:
+            headers["X-API-Key"] = SAFE_SENTINEL_API_KEY
+
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{FASTAPI_URL}/check", json={
+            response = await client.post(f"{FASTAPI_URL}/check", headers=headers, json={
                 "asset": intent['asset'],
                 "origin": intent['origin'],
                 "destination": intent['destination'],
@@ -70,6 +76,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
             }, timeout=30.0)
             
+            response.raise_for_status()
+
             res = response.json()
             status_emoji = "✅" if res.get('risk_level') == "LOW" else "🚨" if res.get('risk_level') == "CRITICAL" else "⚠️"
             
@@ -86,12 +94,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             try:
                 await update.message.reply_text(report, parse_mode=ParseMode.MARKDOWN_V2)
             except Exception as e:
-                logging.error(f"Erro ao enviar Markdown: {e}")
+                logging.error(f"Erro ao enviar Markdown: {e}", exc_info=True)
                 # Fallback para texto plano se o Markdown falhar
                 await update.message.reply_text(report.replace("*", "").replace("_", "").replace("\\", ""))
 
+    except httpx.HTTPStatusError as e:
+        logging.error(f"Erro HTTP do backend (Status {e.response.status_code}): {e}", exc_info=True)
+        await update.message.reply_text("Erro de comunicação com o servidor de segurança. Tente novamente mais tarde.")
     except Exception as e:
-        logging.error(f"Erro no handle_message: {e}")
+        logging.error(f"Erro no handle_message: {e}", exc_info=True)
         await update.message.reply_text("Desculpe, o motor de segurança está ocupado. Tente novamente.")
 
 async def find_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
