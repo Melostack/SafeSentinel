@@ -1,0 +1,4 @@
+## 2024-03-12 - [Unauthenticated API Orchestration of External Paid Services]
+**Vulnerability:** The internal FastAPI endpoints `/extract` and `/check` in `api/server.py` invoked paid, rate-limited external AI services (OpenRouter) but were publicly accessible without any authentication mechanism.
+**Learning:** This architectural flaw allowed an attacker to trivially exhaust the application's API quota and cause a Denial of Service (DoS) by sending arbitrary requests to the unauthenticated backend. Internal APIs that consume external computational or financial resources must *always* validate the caller's identity.
+**Prevention:** Implement `fastapi.security.APIKeyHeader` to require and validate an API key for any endpoint that triggers downstream paid services. Use `secrets.compare_digest` to prevent timing attacks during key validation. Ensure any internal clients (like the Telegram Bot) are updated to securely inject this required header (`X-API-Key`).
