@@ -1,0 +1,4 @@
+## 2024-05-24 - Missing authentication on internal APIs
+**Vulnerability:** Internal APIs (`/check`, `/extract`) that orchestrated paid external services (e.g., OpenRouter, RPC nodes) were completely exposed without any authentication, allowing unauthenticated attackers to cause financial loss and resource exhaustion (Denial of Service).
+**Learning:** Internal microservices or backend APIs that are meant to be consumed by controlled clients (like a Telegram bot) must still implement authentication, especially if they wrap metered/paid 3rd-party services.
+**Prevention:** Always implement service-to-service authentication (e.g., `X-API-Key` with `secrets.compare_digest`) for internal APIs handling sensitive or cost-incurring operations, and ensure clients are configured to pass these credentials.
