@@ -1,0 +1,4 @@
+## 2024-05-24 - [Unauthenticated API Access / AI Resource Exhaustion]
+**Vulnerability:** The internal API (`api/server.py`) exposed endpoints (`/check`, `/extract`) that orchestrate external services (LLMs, blockchains) without any authentication mechanism.
+**Learning:** Internal APIs orchestrating paid/rate-limited external services must be authenticated by default, otherwise attackers can bypass bot/frontend interfaces to deplete API quotas and cause Denial of Service. Also discovered unbounded data risk in incoming Pydantic models.
+**Prevention:** Always implement `fastapi.security.APIKeyHeader` to secure internal routes and use `pydantic.Field(max_length=...)` to prevent malicious payloads from causing memory exhaustion or excessive processing times. Ensure secrets are compared securely using `secrets.compare_digest`.
