@@ -1,0 +1,4 @@
+## 2024-05-27 - [Unauthenticated Endpoints Leading to DoS]
+**Vulnerability:** Core API endpoints (`/extract` and `/check`) were exposed without authentication. These endpoints orchestrated external API calls (e.g., Perplexity, OpenAI, RPCs) based on unbounded user inputs.
+**Learning:** Exposing unauthenticated orchestrator endpoints directly translates to external API quota depletion, resulting in a Denial of Service (DoS) via third-party providers. Furthermore, the lack of input limits (e.g., max_length) on Pydantic models exacerbates the risk of resource exhaustion.
+**Prevention:** Internal APIs orchestrating rate-limited or paid external services must be authenticated by default (e.g., using `APIKeyHeader`). Pydantic models must use `Field(..., max_length=N)` for all string inputs to prevent unbounded data vulnerabilities.
