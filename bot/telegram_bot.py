@@ -61,8 +61,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     try:
+        api_key = os.getenv("SAFE_SENTINEL_API_KEY", "")
+        headers = {"X-API-Key": api_key}
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{FASTAPI_URL}/check", json={
+            response = await client.post(f"{FASTAPI_URL}/check", headers=headers, json={
                 "asset": intent['asset'],
                 "origin": intent['origin'],
                 "destination": intent['destination'],
