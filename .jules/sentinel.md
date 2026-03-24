@@ -1,0 +1,4 @@
+## 2024-05-18 - Missing Information Leakage and Unbounded Inputs Protection
+**Vulnerability:** `api/server.py` had a catch-all exception block returning `detail=str(e)` in the HTTPException, exposing stack traces and internal application logic to attackers. Additionally, the Pydantic models `CheckRequest` and `IntentRequest` did not have string length limits, introducing a DoS vector through excessive input sizes.
+**Learning:** Returning exception details securely is vital. Returning generic error messages and logging the stack traces internally secures the endpoints from revealing logic that can be exploited, while strictly bounding input strings prevents DoS attacks.
+**Prevention:** Always use generic HTTP exception details for 500 status codes, log exceptions internally using `logging.error(..., exc_info=True)`, and use `Field(..., max_length=N)` in all Pydantic strings.
