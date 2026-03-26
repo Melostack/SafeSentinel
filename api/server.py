@@ -1,11 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+
+# Configuração de logs para capturar erros internamente e não expô-los
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -17,14 +22,15 @@ app.add_middleware(
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    # Enforcing max_length to prevent unbounded input attacks
+    asset: str = Field(..., max_length=50)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=100)
+    address: str = Field(..., max_length=200)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
@@ -32,11 +38,17 @@ def home():
 
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):
-    hm = Humanizer()
-    intent = hm.extract_intent(req.text)
-    if not intent:
-        raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
-    return intent
+    try:
+        hm = Humanizer()
+        intent = hm.extract_intent(req.text)
+        if not intent:
+            raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
+        return intent
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Erro interno no /extract", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro interno no servidor.")
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
@@ -77,7 +89,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Erro interno no /check", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro interno no servidor.")
 
 if __name__ == "__main__":
     import uvicorn
