@@ -60,9 +60,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     status_msg = f"⏳ *Validando:* {escape_markdown(intent['asset'], version=2)} | {escape_markdown(intent['origin'], version=2)} ➔ {escape_markdown(intent['destination'], version=2)} ({escape_markdown(intent['network'], version=2)})"
     await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
+    # Add API Key header for backend requests
+    headers = {}
+    api_key = os.getenv("SAFE_SENTINEL_API_KEY")
+    if api_key:
+        headers["X-API-Key"] = api_key
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{FASTAPI_URL}/check", json={
+            response = await client.post(f"{FASTAPI_URL}/check", headers=headers, json={
                 "asset": intent['asset'],
                 "origin": intent['origin'],
                 "destination": intent['destination'],
