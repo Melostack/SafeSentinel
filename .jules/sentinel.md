@@ -1,0 +1,4 @@
+## 2024-05-20 - Parameter Injection in API Connector
+**Vulnerability:** The Binance API connector used manual string concatenation (`'&'.join([f"{k}={v}" for k, v in params.items()])`) to generate the query string for HMAC signature generation. This creates a parameter injection vulnerability if an attacker can manipulate the input values to inject additional query parameters by including the `&` and `=` characters.
+**Learning:** For all API connectors, query strings used for signature generation or request construction must be built using `urllib.parse.urlencode` (or equivalent standard library functions) instead of manual string concatenation to ensure parameters are properly url-encoded and prevent parameter injection.
+**Prevention:** Always use safe, standard library URL encoding mechanisms like `urllib.parse.urlencode` rather than manually formatting URL parameters or constructing query strings.
