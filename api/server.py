@@ -6,6 +6,9 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
@@ -77,7 +80,9 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Sentinel Security Fix: Prevent information leakage by not returning raw exceptions
+        logging.error("Erro interno no check_transfer:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     import uvicorn
