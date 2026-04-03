@@ -1,0 +1,4 @@
+## 2024-05-30 - Missing Authentication on Internal Orchestration APIs
+**Vulnerability:** The internal FastAPI backend (`api/server.py`) exposed endpoints (`/extract` and `/check`) that consumed rate-limited external AI/RPC services without any authentication. This allowed unauthorized external callers to freely consume the APIs, leading to a risk of quota depletion and Denial of Service (DoS).
+**Learning:** Internal service-to-service communication that triggers paid or rate-limited external calls must be authenticated by default to prevent abuse, even if the primary consumer is another internal service like a Telegram bot.
+**Prevention:** Implement an `APIKeyHeader` dependency on all internal FastAPI endpoints that interact with external services. Ensure all internal clients (e.g., `telegram_bot.py`) inject the correct security header.

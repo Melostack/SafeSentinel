@@ -61,6 +61,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     try:
+        # Recuperar a API key para autenticação com o backend
+        api_key = os.getenv("SAFE_SENTINEL_API_KEY", "")
+        headers = {"X-API-Key": api_key} if api_key else {}
+
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{FASTAPI_URL}/check", json={
                 "asset": intent['asset'],
@@ -68,7 +72,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "destination": intent['destination'],
                 "network": intent['network'],
                 "address": intent.get('address') or "0x0000000000000000000000000000000000000000"
-            }, timeout=30.0)
+            }, headers=headers, timeout=30.0)
+
+            # Checar erros HTTP (e.g. 401 Unauthorized)
+            response.raise_for_status()
             
             res = response.json()
             status_emoji = "✅" if res.get('risk_level') == "LOW" else "🚨" if res.get('risk_level') == "CRITICAL" else "⚠️"
