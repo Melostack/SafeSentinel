@@ -6,6 +6,10 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -32,11 +36,17 @@ def home():
 
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):
-    hm = Humanizer()
-    intent = hm.extract_intent(req.text)
-    if not intent:
-        raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
-    return intent
+    try:
+        hm = Humanizer()
+        intent = hm.extract_intent(req.text)
+        if not intent:
+            raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
+        return intent
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
@@ -77,7 +87,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     import uvicorn
