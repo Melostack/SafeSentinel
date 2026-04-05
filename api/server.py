@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.gatekeeper import Gatekeeper
@@ -16,6 +17,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+def get_api_key(api_key: str = Security(api_key_header)):
+    expected_key = os.environ.get("SAFE_SENTINEL_API_KEY")
+    if not expected_key:
+        raise HTTPException(status_code=500, detail="Server Configuration Error")
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return api_key
+
 class CheckRequest(BaseModel):
     asset: str
     origin: str
@@ -31,7 +42,7 @@ def home():
     return {"status": "SafeSentinel Command Center API Operational"}
 
 @app.post("/extract")
-async def extract_intent(req: IntentRequest):
+async def extract_intent(req: IntentRequest, api_key: str = Depends(get_api_key)):
     hm = Humanizer()
     intent = hm.extract_intent(req.text)
     if not intent:
@@ -39,7 +50,7 @@ async def extract_intent(req: IntentRequest):
     return intent
 
 @app.post("/check")
-async def check_transfer(req: CheckRequest):
+async def check_transfer(req: CheckRequest, api_key: str = Depends(get_api_key)):
     try:
         gk = Gatekeeper()
         hm = Humanizer()
