@@ -1,0 +1,4 @@
+## 2024-05-24 - [CRITICAL] Prevented API Information Leakage and Insecure CORS Policy
+**Vulnerability:** Fast API application was configured with `allow_origins=["*"]`, enabling unauthorized domains to interact with the service. Additionally, the `/check` endpoint's generic exception handler leaked full stack traces directly to clients via `detail=str(e)`.
+**Learning:** Defaulting to wildcard (`*`) CORS configuration introduces major cross-origin security risks. Returning unhandled raw exception details can leak backend architecture details (e.g. paths, configurations, internal variable states), aiding attackers.
+**Prevention:** Always scope CORS policies explicitly via environment variables with a secure fallback (e.g., `fail-closed`). Replace all raw exception string returns in API responses with generic error messages, using a robust server-side logging mechanism (`exc_info=True`) to maintain debugging capabilities securely.
