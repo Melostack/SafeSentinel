@@ -1,0 +1,4 @@
+## 2024-05-24 - [Fix Server API Security Settings]
+**Vulnerability:** The FastAPI application used `allow_origins=["*"]` exposing it to cross-origin attacks, lacked maximum length constraints on Pydantic models exposing it to DoS attacks, and leaked raw stack trace strings via HTTP 500 error responses (`detail=str(e)`).
+**Learning:** Pydantic models by default accept unbounded strings if not explicitly constrained with `Field(max_length=...)`. Global Exception handlers must log the exact error internally (`exc_info=True`) while sending standard messages to the frontend to prevent recon.
+**Prevention:** Always restrict CORS explicitly using environment variables (e.g. `FRONTEND_URL`), bound string length inputs on all Pydantic schemas, and enforce generic HTTP 500 responses while piping errors to internal loggers.
