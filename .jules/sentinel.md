@@ -1,0 +1,4 @@
+## 2024-03-24 - [CORS and Information Leakage Fix]
+**Vulnerability:** The API had an overly permissive CORS configuration (`allow_origins=["*"]`) which allowed any site to make requests. Additionally, the `/check` endpoint returned raw exception messages (`detail=str(e)`), potentially leaking sensitive stack traces and internal architecture details.
+**Learning:** Returning unhandled exceptions in the API layer exposes internal implementations, while wildcard CORS policies bypass intended origin restrictions, putting the frontend at higher risk of cross-site request forgery and data scraping.
+**Prevention:** Always restrict CORS to explicitly trusted origins (e.g. from environment variables). Catch generic exceptions, log them with `exc_info=True` for debugging, and return standard generic messages to end users.
