@@ -1,0 +1,4 @@
+## 2025-02-23 - Prevent Raw Exception Leakage and Secure CORS
+**Vulnerability:** The FastAPI application used a wildcard `["*"]` for CORS `allow_origins`, potentially allowing cross-origin requests from malicious domains. Additionally, the `/check` endpoint exposed raw exception strings to the client in a 500 error response (`detail=str(e)`).
+**Learning:** Returning unhandled exception strings can expose sensitive system internals, database details, or code paths. Using wildcard CORS bypasses intended browser security controls.
+**Prevention:** Always restrict CORS `allow_origins` to trusted domains (e.g., using `FRONTEND_URL` environment variable) and ensure it fails safely (empty list) if unset. Always log exceptions internally using `logging.error(..., exc_info=True)` and return generic, safe error messages to clients.
