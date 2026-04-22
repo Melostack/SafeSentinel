@@ -9,9 +9,13 @@ import os
 
 app = FastAPI()
 
+# Configure CORS securely: require explicit FRONTEND_URL or fail closed
+frontend_url = os.getenv("FRONTEND_URL")
+allowed_origins = [frontend_url] if frontend_url else []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
