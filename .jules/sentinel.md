@@ -1,0 +1,4 @@
+## 2025-05-24 - [Information Leakage and Open CORS Vulnerability]
+**Vulnerability:** The API had an overly permissive wildcard `allow_origins=["*"]` configured for CORS. Additionally, the `/check` endpoint's top-level exception handler exposed the raw exception message `detail=str(e)` to the client, potentially leaking database or internal infrastructure errors.
+**Learning:** Even simple APIs are vulnerable to exposing architecture details if exception handlers are not properly configured to fail securely. Relying on default CORS configurations with `allow_origins=["*"]` is a security risk in production setups.
+**Prevention:** Always restrict `allow_origins` to known frontend domains, using environment variables like `FRONTEND_URL`. Top-level exception handlers should log the error internally (`logging.error(e, exc_info=True)`) and return a generic safe message (e.g., `Internal Server Error`) to the end-user.
