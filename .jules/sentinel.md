@@ -1,0 +1,5 @@
+
+## 2024-05-23 - Prevent Information Disclosure & Unrestricted CORS
+**Vulnerability:** The `/check` API endpoint exposed internal system exceptions directly to clients via `raise HTTPException(status_code=500, detail=str(e))`. Additionally, the CORS middleware used `allow_origins=["*"]`, enabling unauthorized domains to interact with the API, and input fields on Pydantic models had no length limits (DoS risk).
+**Learning:** Exception messages can inadvertently leak sensitive infrastructure details, database schemas, or stack traces. Unrestricted CORS allows potential CSRF and malicious cross-origin interactions. Unbounded string inputs make endpoints susceptible to Denial of Service via memory exhaustion.
+**Prevention:** Exception handlers must always log internally with `exc_info=True` and return generic, non-sensitive messages to the client. CORS configurations must strict-allowlist trusted domains (e.g., via `FRONTEND_URL` environment variables) and default to deny. Pydantic models must use `Field(..., max_length=X)` to bound all incoming string data.
