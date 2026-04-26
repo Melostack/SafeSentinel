@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import time
 import os
+import urllib.parse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +31,7 @@ class BybitConnector:
 
         endpoint = "/v5/asset/coin/query-info"
         timestamp = str(int(time.time() * 1000))
-        params = f"coin={asset.upper()}"
+        params = urllib.parse.urlencode({"coin": asset.upper()})
         
         signature = self._generate_signature(params)
         
