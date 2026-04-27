@@ -1,0 +1,4 @@
+## 2024-04-27 - [Information Leakage & DoS Risk]
+**Vulnerability:** Found endpoints returning raw error details (like `str(e)`) to the client, leading to potential Information Leakage. Additionally, found `requests.post` without explicit timeout arguments, which could result in a Denial of Service via hanging connections.
+**Learning:** Returning `str(e)` on exception directly exposes implementation details or system secrets. Neglecting `timeout` on external API requests can cause the server to hang indefinitely when external services fail.
+**Prevention:** Always log exceptions internally using `logging.error(e, exc_info=True)` and return generic `HTTPException` messages to the client. Always specify a timeout (e.g. `timeout=15`) in all external network requests using the `requests` module.

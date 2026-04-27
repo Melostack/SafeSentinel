@@ -50,7 +50,7 @@ class SourcingAgent:
         }
 
         try:
-            response = requests.post(self.url, headers=headers, json=payload)
+            response = requests.post(self.url, headers=headers, json=payload, timeout=15)
             response.raise_for_status()
             data = response.json()
             return json.loads(data['choices'][0]['message']['content']), None
