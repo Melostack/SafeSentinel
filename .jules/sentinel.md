@@ -1,0 +1,4 @@
+## 2024-05-18 - Prevent Parameter Injection in API Connectors
+**Vulnerability:** External API Connectors for Bybit and Binance were manually constructing query strings using string concatenation or f-strings before signing payloads. An attacker could inject arbitrary parameters into the request by providing specifically crafted inputs containing `&` or `=` characters, potentially allowing them to bypass validations or send malicious payloads to the third-party service.
+**Learning:** Manual construction of query parameters is always vulnerable to parameter injection and manipulation. Even if inputs appear restricted, missing URL-encoding enables malicious parameter crafting.
+**Prevention:** All query strings utilized for signatures or REST requests MUST be built using established library functions like `urllib.parse.urlencode()`, which handle URL-encoding correctly and strictly isolate keys and values.
