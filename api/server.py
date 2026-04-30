@@ -1,30 +1,38 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
 
 app = FastAPI()
 
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allow_origins = [frontend_url]
+else:
+    logging.warning("FRONTEND_URL not set. Using allow_origins=['*']. This is a security risk in production.")
+    allow_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=50)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=50)
+    address: str = Field(..., max_length=150)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
@@ -77,7 +85,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error("Erro interno no servidor durante /check", exc_info=True)
+        raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor ao processar sua requisição.")
 
 if __name__ == "__main__":
     import uvicorn

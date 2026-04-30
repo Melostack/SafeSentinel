@@ -1,0 +1,4 @@
+## 2024-05-01 - [API Security Hardening]
+**Vulnerability:** The API server had multiple high-risk vulnerabilities: 1) Overly permissive CORS `allow_origins=["*"]`, allowing arbitrary websites to make cross-origin requests. 2) Missing bounds checking on incoming data in Pydantic models, opening a DoS vector. 3) Exposing raw internal error strings in exceptions to users (`detail=str(e)`), risking sensitive information leaks.
+**Learning:** Default unauthenticated internal endpoints often expose generic exception details and rely on basic Pydantic structures without max length caps, which poses both DoS and info-leak risks when left unaddressed in proxy or microservice architectures.
+**Prevention:** 1) Restrict CORS to trusted origins via env vars (`FRONTEND_URL`), 2) Apply explicit bounds via `pydantic.Field(max_length=...)` for string inputs, and 3) Always suppress raw string outputs from errors on API limits, logging internally using `exc_info=True`.
