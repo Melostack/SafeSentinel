@@ -1,0 +1,4 @@
+## 2024-05-24 - [Information Leakage in API Error Handler]
+**Vulnerability:** The `/check` endpoint in `api/server.py` was directly returning the string representation of an exception (`detail=str(e)`) in a 500 HTTPException. This is an information leakage vulnerability because it can expose internal implementation details, stack traces, or other sensitive information to the client.
+**Learning:** Returning raw exception messages to clients is dangerous. Exception messages often contain context about internal code structure, database queries, or external service configurations, which can aid attackers.
+**Prevention:** Always catch generic exceptions, log the detailed error internally using `logging.error(..., exc_info=True)`, and return a safe, generic error message (like "An internal server error occurred") to the client.
