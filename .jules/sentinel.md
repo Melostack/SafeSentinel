@@ -1,0 +1,4 @@
+## 2024-11-20 - [Fix Information Leakage, DoS Risk, and CORS]
+**Vulnerability:** The API server had multiple security issues: unconstrained Pydantic models allowing DoS via large payloads, information leakage by returning raw stack traces in exception messages (`str(e)`), and an overly permissive CORS setup (`allow_origins=["*"]`).
+**Learning:** Returning `str(e)` inside HTTP exceptions directly exposes internal stack traces to users, and `allow_origins=["*"]` allows any site to access the API. Unbounded Pydantic models leave the app susceptible to resource exhaustion attacks.
+**Prevention:** Always use `Field(..., max_length=X)` for string fields in Pydantic models. Ensure exception handlers log full errors server-side with `exc_info=True` but return generic responses to users. Configure CORS using the environment variables (e.g., `FRONTEND_URL`) to restrict origins explicitly.
