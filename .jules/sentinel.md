@@ -1,0 +1,4 @@
+## 2024-05-09 - [Fix API Server Security Vulnerabilities]
+**Vulnerability:** The FastAPI application (`api/server.py`) had an overly permissive CORS configuration (`allow_origins=["*"]`), Pydantic models lacking input length validation (exposing to DoS via unbounded data), and bare exception handlers exposing sensitive stack trace/error details to clients.
+**Learning:** Returning `str(e)` in an exception handler can leak internal implementation details, file paths, or sensitive internal states. Lack of string length bounds in APIs consumed by unauthenticated clients is a common source of resource exhaustion.
+**Prevention:** Always use `logging.error(e, exc_info=True)` for internal logs and return generic errors like "Internal Server Error" to clients. Always validate the maximum length of string inputs via Pydantic `Field(max_length=...)` and properly restrict CORS origins.
