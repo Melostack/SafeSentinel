@@ -1,0 +1,4 @@
+## 2024-05-24 - Information Leakage via Unhandled Exception Exposure
+**Vulnerability:** API endpoint `/check` catches generic `Exception` and returns `str(e)` directly to the client via `HTTPException(status_code=500, detail=str(e))`. This exposes internal application state, potential stack traces from underlying libraries, and could leak sensitive information.
+**Learning:** In the FastAPI `api/server.py` architecture, exceptions from complex internal modules (`Gatekeeper`, `Humanizer`, `OnChainVerifier`) were blindly propagated to the frontend without sanitization or internal logging.
+**Prevention:** Always catch exceptions, log them internally using `logging.error(..., exc_info=True)` for debugging, and return a generic, non-sensitive message (e.g., "Internal server error") to the client.
