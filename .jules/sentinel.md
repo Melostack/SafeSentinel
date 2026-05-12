@@ -1,0 +1,4 @@
+## 2024-06-25 - API Server Security Enhancements
+**Vulnerability:** The API server had three security risks: (1) overly permissive CORS (`allow_origins=["*"]`), (2) unbound request payload inputs, making it susceptible to DoS attacks, and (3) leaking of internal exception messages via stack trace directly in HTTP 500 errors.
+**Learning:** These gaps existed due to missing defense-in-depth principles (validating lengths of requests and properly filtering traceback leaking in responses).
+**Prevention:** (1) Restrict CORS origin using env variables instead of allowing all, (2) enforce specific constraints like `max_length` in Pydantic BaseModels, and (3) consistently log stack traces internally using `logging.error(..., exc_info=True)` while surfacing generic errors to clients.
