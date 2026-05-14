@@ -1,0 +1,4 @@
+## 2024-05-27 - [API Security Hardening]
+**Vulnerability:** The API server had multiple high-risk vulnerabilities: 1) Overly permissive CORS `allow_origins=["*"]` which allows any website to make cross-origin requests; 2) No maximum length limits on Pydantic models which allows unbound payload and DoS attacks; and 3) Returning `str(e)` on internal server errors which leaks internal stack traces to the client.
+**Learning:** Default FastAPI configurations are not secure by default. Pydantic models must be explicitly constrained using `Field(..., max_length=X)`. Exception blocks must log errors server-side and return generic client errors.
+**Prevention:** Always restrict CORS to known domains via environment variables. Always restrict payload string lengths using Pydantic `Field`. Use a global exception handler or update endpoint exception blocks to use `logging.error(exc_info=True)` and return generic `HTTPException` details.
