@@ -1,0 +1,4 @@
+## 2024-05-15 - Parameter Injection in API Connectors
+**Vulnerability:** The `BinanceConnector` and `BybitConnector` used manual string concatenation (e.g., `f"{k}={v}"` and `f"coin={asset.upper()}"`) to build query strings for generating HMAC signatures and making requests. This could allow an attacker to inject additional parameters or modify existing ones via crafted input.
+**Learning:** Manual URL parameter construction is a recurring pattern in custom API clients and is highly vulnerable to parameter injection and signature evasion.
+**Prevention:** Always use standard URL encoding libraries like `urllib.parse.urlencode` to construct query strings. This ensures special characters like `&` and `=` in the input are safely encoded, preventing injection attacks. Also ensure the same timestamp used to construct the signature payload string is used in the request headers to avoid race conditions.
