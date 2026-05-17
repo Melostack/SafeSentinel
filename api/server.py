@@ -1,30 +1,38 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+
+# Configuração básica de logging
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
+# SECURITY: Prevenir overly permissive CORS. Limitar a origens conhecidas.
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[frontend_url],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# SECURITY: Prevenir DoS através de requests muito longos.
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=20)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=50)
+    address: str = Field(..., max_length=150)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
@@ -32,11 +40,18 @@ def home():
 
 @app.post("/extract")
 async def extract_intent(req: IntentRequest):
-    hm = Humanizer()
-    intent = hm.extract_intent(req.text)
-    if not intent:
-        raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
-    return intent
+    try:
+        hm = Humanizer()
+        intent = hm.extract_intent(req.text)
+        if not intent:
+            raise HTTPException(status_code=400, detail="Não foi possível entender a intenção.")
+        return intent
+    except HTTPException:
+        raise
+    except Exception as e:
+        # SECURITY: Evitar vazar a stack trace para os usuários
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 @app.post("/check")
 async def check_transfer(req: CheckRequest):
@@ -77,7 +92,9 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Evitar vazar a stack trace para os usuários.
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="An internal error occurred.")
 
 if __name__ == "__main__":
     import uvicorn
