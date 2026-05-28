@@ -1,0 +1,4 @@
+## 2024-05-28 - CORS Misconfiguration, Information Leakage, and Missing Input Validations in FastAPI
+**Vulnerability:** The FastAPI application used an overly permissive CORS configuration (`allow_origins=["*"]`), caught exceptions in API routes exposing the internal stack trace/details (`detail=str(e)`), and had Pydantic models accepting unbounded strings.
+**Learning:** These are common misconfigurations in FastAPI setups that can lead to Cross-Origin attacks, DoS via large inputs, and information disclosure through poorly handled errors.
+**Prevention:** Always restrict `allow_origins` to known frontend domains via environment variables, enforce maximum string lengths on Pydantic `Field` arguments, and ensure global/route exception handlers use `logging.error(..., exc_info=True)` while returning generic messages.
