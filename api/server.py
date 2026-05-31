@@ -11,7 +11,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # 🛡️ Sentinel: Restrict CORS origins to prevent unauthorized access.
+    # Supports comma-separated list of origins for multi-environment setups.
+    allow_origins=os.getenv("FRONTEND_URL", "http://localhost:3000").split(","),
     allow_methods=["*"],
     allow_headers=["*"],
 )
