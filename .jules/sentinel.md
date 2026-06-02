@@ -1,0 +1,4 @@
+## 2024-06-02 - Parameter Injection and Timestamp Race Conditions in API Connectors
+**Vulnerability:** API connectors (Binance, Bybit) were building query strings using manual string concatenation (`&`.join or `+`) or f-strings instead of URL encoding. Bybit connector generated the timestamp inside the signature function, risking a race condition if time elapsed before building the headers.
+**Learning:** Manual query string construction can lead to parameter injection if user input is included. For API requests relying on timestamps for signatures, the exact timestamp must be strictly synchronized between the signature payload and request headers.
+**Prevention:** Always use `urllib.parse.urlencode` (or equivalent library functions) to build query strings for API requests to safely escape and encode parameters. When generating a signature using a timestamp, always pass the pre-computed timestamp to the signature function to avoid race conditions.
