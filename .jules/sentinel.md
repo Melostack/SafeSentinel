@@ -1,0 +1,4 @@
+## 2024-06-08 - Fix CORS and Error Leakage in API Server
+**Vulnerability:** The main API server (`api/server.py`) was misconfigured with overly permissive CORS `allow_origins=["*"]`, which is a security risk. Additionally, the `/check` endpoint's exception handling was leaking raw error details (`str(e)`) via 500 responses.
+**Learning:** Foundational security features like CORS policies must restrict origins strictly to trusted clients, and generic 500 error responses must mask stack traces to prevent reconnaissance attacks. Returning the unhandled exception string directly allows potential exposure of inner workings.
+**Prevention:** Implement strict domain whitelists for CORS sourced from environment configurations (like `FRONTEND_URL`), and ensure exception handlers log full traces internally (`exc_info=True`) while rendering generic details to external callers.
