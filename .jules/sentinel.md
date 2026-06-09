@@ -1,0 +1,4 @@
+## 2025-02-28 - FastAPI Exception and Request Security Patterns
+**Vulnerability:** The FastAPI endpoints previously leaked raw exception details (`detail=str(e)`), allowed unconstrained input lengths in Pydantic models (DoS risk), and used a highly permissive CORS configuration (`allow_origins=["*"]`).
+**Learning:** Returning `str(e)` directly to the client can leak internal server state, stack traces, or sensitive variables. Additionally, failing to bound string inputs in models can lead to memory exhaustion attacks. Broad CORS policies expose internal APIs to malicious web origins.
+**Prevention:** Always use generic HTTP exception details (`"Internal server error"`) while logging the true stack trace internally (`logging.error(e, exc_info=True)`). Enforce strict max lengths on all `BaseModel` strings using Pydantic's `Field(..., max_length=X)`. Restrict `allow_origins` strictly to trusted domains managed via environment variables.
