@@ -1,0 +1,4 @@
+## 2024-06-10 - [API Data Leakage and Unbounded Inputs]
+**Vulnerability:** Exception details leakage in API, overly permissive CORS (`allow_origins=["*"]`), and unbounded Pydantic model fields.
+**Learning:** Returning `str(e)` in `HTTPException` can leak sensitive stack traces and internal logic. Using `allow_origins=["*"]` allows any malicious domain to make requests to the API. Unbounded Pydantic string fields expose the application to DoS attacks via excessively large payloads.
+**Prevention:** Exception handlers in API endpoints must log the error internally using `exc_info=True` and return generic, non-sensitive messages. CORS configurations must explicitly define allowed origins, potentially dynamically via env variables. Always use `pydantic.Field` with `max_length` limits for strings in API input models.
