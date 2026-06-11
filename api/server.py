@@ -1,30 +1,37 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
 
 app = FastAPI()
 
+# 🛡️ Sentinel: Secure CORS configuration
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = frontend_url.split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    # 🛡️ Sentinel: Enforce string limits to prevent DoS attacks
+    asset: str = Field(..., max_length=50)
+    origin: str = Field(..., max_length=50)
+    destination: str = Field(..., max_length=50)
+    network: str = Field(..., max_length=50)
+    address: str = Field(..., max_length=256)
 
 class IntentRequest(BaseModel):
-    text: str
+    # 🛡️ Sentinel: Enforce string limits
+    text: str = Field(..., max_length=2000)
 
 @app.get("/")
 def home():
@@ -77,7 +84,9 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # 🛡️ Sentinel: Log exception internally and prevent sensitive information leakage
+        logging.error("Error in check_transfer endpoint", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     import uvicorn
