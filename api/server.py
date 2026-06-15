@@ -6,25 +6,29 @@ from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("FRONTEND_URL", "http://localhost:3000").split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=50)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=100)
+    address: str = Field(..., max_length=200)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
@@ -77,7 +81,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Erro interno no endpoint /check: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor.")
 
 if __name__ == "__main__":
     import uvicorn
