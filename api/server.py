@@ -9,9 +9,13 @@ import os
 
 app = FastAPI()
 
+# Use FRONTEND_URL for allowed origins, defaulting to localhost:3000
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = [origin.strip() for origin in frontend_url.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
