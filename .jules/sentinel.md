@@ -1,0 +1,4 @@
+## 2026-06-30 - [Error Leakage, Insecure CORS & DoS Risk]
+**Vulnerability:** The application was logging raw exception objects directly to user responses, using `allow_origins=["*"]` for CORS, and taking unbounded string lengths for input requests on `api/server.py`.
+**Learning:** Returning str(e) on exception handling allows stack trace leakage. Broad CORS settings and unbounded model strings expose the API to exploitation and Denial-of-Service attacks.
+**Prevention:** Catch generic exceptions internally using `logger.error(..., exc_info=True)` and return safe messages. Use structured environment variables instead of `["*"]` to strictly limit CORS boundaries. Apply `pydantic.Field(..., max_length=X)` limits on all incoming Pydantic validation schemas to protect against unbounded payload size and regex evaluation DoS.
