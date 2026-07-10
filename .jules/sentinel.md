@@ -1,0 +1,4 @@
+## 2024-07-10 - HMAC Signature Parameter Injection and Timestamp Race Conditions
+**Vulnerability:** HMAC signatures for Binance and Bybit API connectors were susceptible to parameter injection due to unsafe string interpolation or concatenation when building query strings. Bybit connector also suffered from timestamp race conditions where the timestamp used in headers could differ from the one used for the signature.
+**Learning:** Using string formatting or manual concatenation for URLs and signature parameters allows injection of unintended arguments, potentially modifying the API request payload securely signed. Race conditions in timestamp generation invalidate HMAC signatures resulting in sporadic auth failures.
+**Prevention:** Always use `urllib.parse.urlencode` to securely encode API query parameters. Ensure the identical timestamp string variable is used for generating the signature payload and as the request header.
