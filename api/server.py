@@ -1,30 +1,33 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.gatekeeper import Gatekeeper
 from core.humanizer import Humanizer
 from core.sourcing_agent import SourcingAgent
 from core.connectors.web3_rpc_connector import OnChainVerifier
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("FRONTEND_URL", "http://localhost:3000").split(","),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class CheckRequest(BaseModel):
-    asset: str
-    origin: str
-    destination: str
-    network: str
-    address: str
+    asset: str = Field(..., max_length=100)
+    origin: str = Field(..., max_length=100)
+    destination: str = Field(..., max_length=100)
+    network: str = Field(..., max_length=100)
+    address: str = Field(..., max_length=100)
 
 class IntentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=1000)
 
 @app.get("/")
 def home():
@@ -77,7 +80,8 @@ async def check_transfer(req: CheckRequest):
             "on_chain": on_chain_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 if __name__ == "__main__":
     import uvicorn
