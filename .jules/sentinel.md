@@ -1,0 +1,4 @@
+## 2025-03-08 - Secure API Endpoints
+**Vulnerability:** The FastAPI server had an overly permissive CORS configuration (`allow_origins=["*"]`), lacked input length validation on Pydantic models (DoS risk), and leaked sensitive raw exception details in error responses instead of returning generic error messages.
+**Learning:** These are common backend vulnerability patterns that should be standard practice to secure. Ensure CORS is restricted to trusted origins, Pydantic inputs have length constraints, and exception handling obfuscates internal stack traces while logging them server-side.
+**Prevention:** Implement `allow_origins` via environment variables (e.g., `FRONTEND_URL`), use `Field(max_length=...)` for all string inputs in models, and use robust `try-except` blocks to catch and log errors (`logging.error(..., exc_info=True)`) returning a safe 500 error message.
