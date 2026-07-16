@@ -1,0 +1,4 @@
+## 2024-06-03 - [Security Fix] Parameter Injection and Race Condition in API Signatures
+**Vulnerability:** API Connectors used manual string formatting (like '&'.join and f-strings) to build query parameters for HMAC signatures. This allowed parameter injection. The Bybit connector also fetched timestamps independently in signature generation and header assignment, causing a race condition leading to failed authentications.
+**Learning:** Using `urllib.parse.urlencode` ensures parameters are properly URL-encoded and safely constructed, avoiding injection. Reusing the exact timestamp string variable for both payload creation and headers prevents race conditions.
+**Prevention:** Always use URL encoding libraries for building query strings in signatures, and always pass the generated timestamp into signature generation functions instead of generating it within them.

@@ -14,7 +14,8 @@ class BinanceConnector:
         self.api_secret = os.getenv("BINANCE_API_SECRET") # Note: Precisaremos dela para HMAC
 
     def _generate_signature(self, params):
-        query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+        import urllib.parse
+        query_string = urllib.parse.urlencode(params)
         return hmac.new(self.api_secret.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
 
     def get_supported_networks(self, asset):
