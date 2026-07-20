@@ -9,9 +9,13 @@ import os
 
 app = FastAPI()
 
+# Security Directive: Restrict CORS origins using FRONTEND_URL env var
+frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = frontend_url.split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
