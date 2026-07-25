@@ -1,0 +1,4 @@
+## 2024-07-25 - Prevent Parameter Injection and Race Conditions in Connectors
+**Vulnerability:** BinanceConnector and BybitConnector used string concatenation to build query parameters, opening the door to URL parameter injection. BybitConnector generated separate timestamps for the HMAC signature and the request header, creating a race condition that caused intermittent authentication failures.
+**Learning:** Always use standard URL encoding libraries (`urllib.parse.urlencode`) when constructing query strings for API requests and signature payloads to prevent injection. When APIs require timestamps for both signatures and headers, generate the timestamp exactly once per request and pass it to all necessary components.
+**Prevention:** Enforce the use of `urllib.parse.urlencode` in all new API connectors. Institute a mandatory code review check for timestamp race conditions when validating third-party API authentication logic.
