@@ -1,0 +1,4 @@
+## 2024-07-26 - Exception Information Leakage, Missing Input Validation, and Permissive CORS
+**Vulnerability:** The API returned raw exception messages in the 500 error response (information leakage), used permissive CORS settings, and didn't limit input lengths in Pydantic models.
+**Learning:** Returning `str(e)` in an exception handler can expose sensitive internal workings or stack traces. Permissive CORS (`["*"]`) can allow unauthorized domains to make cross-origin requests. Unbounded input length increases the risk of Denial of Service (DoS) attacks.
+**Prevention:** Always log exceptions internally using `logger.error` and return generic error messages to clients. Set specific allowed origins for CORS. Use `pydantic.Field` to enforce sensible maximum lengths on all string inputs.
