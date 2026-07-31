@@ -1,0 +1,4 @@
+## 2024-07-31 - [Security Enhancements in API]
+**Vulnerability:** Overly permissive CORS policy (`allow_origins=["*"]`), missing length limits on Pydantic models (DoS risk), and insecure exception handling in `/check` that leaked raw exception details.
+**Learning:** Default configurations in FastAPI for CORS and unconstrained Pydantic string fields can easily introduce critical security vulnerabilities (e.g., Cross-Origin Resource Sharing bypass, ReDoS/DoS via large payloads). Furthermore, passing raw exceptions to HTTP 500 responses (`detail=str(e)`) leaks internal implementation details to the client.
+**Prevention:** Always restrict CORS `allow_origins` to trusted domains via environment variables. Explicitly constrain all user-supplied string fields using `pydantic.Field(max_length=...)`. Always catch exceptions, log the full traceback internally using `logging.error(..., exc_info=True)`, and return a safe, generic error message to the client.
