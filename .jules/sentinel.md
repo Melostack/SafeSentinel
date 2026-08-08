@@ -1,0 +1,4 @@
+## 2024-08-08 - Fix CORS, Info Leakage, and DoS Risk in API
+**Vulnerability:** The API allowed all origins (`allow_origins=["*"]`) in CORS, exposed internal exception details in HTTP 500 responses (`detail=str(e)`), and lacked length constraints on Pydantic models, creating DoS and information leakage risks.
+**Learning:** These vulnerabilities expose sensitive server information to clients and allow unauthorized domains to access the API. The lack of length limits on input fields makes the application vulnerable to DoS via large payloads.
+**Prevention:** Use environment variables (e.g., `FRONTEND_URL`) for CORS allowed origins, sanitize HTTP 500 exception details to generic messages (e.g., "Erro interno do servidor"), and enforce string limits using Pydantic's `Field` (e.g., `max_length=100`).
