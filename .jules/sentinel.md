@@ -1,0 +1,4 @@
+## 2024-05-24 - [CRITICAL] Fix API Security Vulnerabilities (CORS, DoS, Info Leak)
+**Vulnerability:** The API server (`api/server.py`) had a wildcard CORS policy (`allow_origins=["*"]`), unconstrained Pydantic models lacking length limits (DoS risk), and exposed raw exception strings in 500 Internal Server Error responses (Information Leakage).
+**Learning:** Hardcoding wildcard CORS is a severe vulnerability. Pydantic models without limits allow massive payloads. Catching general exceptions and returning `str(e)` to users exposes internal application details, potentially including sensitive paths or data.
+**Prevention:** Always parse CORS allowed origins from an environment variable (e.g., `FRONTEND_URL`). Use `Field(..., max_length=X)` on strings in Pydantic models to mitigate DoS. Log internal errors using `logging.error(..., exc_info=True)` and return generic messages like "Erro interno do servidor" to users.
