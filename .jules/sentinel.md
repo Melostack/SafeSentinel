@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix FastAPI Security Misconfigurations
+**Vulnerability:** The FastAPI application suffered from overly permissive CORS configurations, lacked string length limits in Pydantic models resulting in potential DoS, and leaked internal stack traces/exception details to clients on 500 errors.
+**Learning:** Default configurations or rapid prototyping setups (like `allow_origins=["*"]` or missing bounds) often end up in production, exposing APIs to cross-origin abuse, denial of service via large payloads, and information disclosure through raw error messages.
+**Prevention:** Always restrict CORS to known domains via environment variables, enforce strict length/size limits on all incoming request models, and catch generic exceptions to log them internally (with `exc_info=True`) while returning generic user-friendly messages like "Erro interno do servidor".
