@@ -1,0 +1,4 @@
+## 2025-01-01 - API Server Security Fixes
+**Vulnerability:** Overly permissive CORS (`allow_origins=["*"]`), Information exposure in exception handling (`detail=str(e)`), and DoS risk in Pydantic models (missing length limits).
+**Learning:** Returning raw exception details exposes internal system structures. Allowing all origins in CORS bypasses frontend domain restrictions. Unbounded Pydantic string fields allow DoS attacks via large payloads.
+**Prevention:** Always use environment-configured CORS policy (`FRONTEND_URL`), use generic error messages ("Erro interno do servidor") while logging exceptions internally with `exc_info=True`, and specify `max_length` limits on string inputs.
