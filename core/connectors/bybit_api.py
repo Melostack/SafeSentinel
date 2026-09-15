@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import time
 import os
+import urllib.parse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,9 +14,10 @@ class BybitConnector:
         self.api_key = os.getenv("BYBIT_API_KEY")
         self.api_secret = os.getenv("BYBIT_API_SECRET")
 
-    def _generate_signature(self, params):
+    def _generate_signature(self, params, timestamp=None):
         # Bybit V5 usa uma lógica de assinatura específica
-        timestamp = str(int(time.time() * 1000))
+        if timestamp is None:
+            timestamp = str(int(time.time() * 1000))
         recv_window = "5000"
         param_str = timestamp + self.api_key + recv_window + params
         return hmac.new(self.api_secret.encode('utf-8'), param_str.encode('utf-8'), hashlib.sha256).hexdigest()
@@ -30,9 +32,9 @@ class BybitConnector:
 
         endpoint = "/v5/asset/coin/query-info"
         timestamp = str(int(time.time() * 1000))
-        params = f"coin={asset.upper()}"
+        params = urllib.parse.urlencode({"coin": asset.upper()})
         
-        signature = self._generate_signature(params)
+        signature = self._generate_signature(params, timestamp=timestamp)
         
         headers = {
             "X-BSRV-APIKEY": self.api_key,
