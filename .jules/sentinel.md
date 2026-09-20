@@ -1,0 +1,4 @@
+## 2024-05-24 - FastAPI Security Hardening
+**Vulnerability:** Overly permissive CORS (`allow_origins=["*"]`), missing input validation on Pydantic models allowing DoS via large payloads, and error handlers exposing raw exception details to clients.
+**Learning:** Default FastAPI setups often lack production security controls. Unrestricted CORS exposes APIs to malicious sites, unconstrained inputs risk DoS, and raw errors leak system internals.
+**Prevention:** Always restrict CORS to trusted domains via env vars, strictly define `max_length` in Pydantic models for strings, and implement centralized internal logging while returning generic error messages (e.g., "Erro interno do servidor") to clients.
