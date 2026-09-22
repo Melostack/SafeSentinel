@@ -1,0 +1,4 @@
+## 2024-05-24 - API Security Enhancements: Error Masking and CORS Restrict
+**Vulnerability:** The API currently uses `allow_origins=["*"]` which allows cross-origin requests from any domain, exposing the API to unauthorized usage. Furthermore, the global exception handler in the `/check` endpoint leaks the raw exception string to the client.
+**Learning:** Using `allow_origins=["*"]` completely circumvents the same-origin policy, leading to potential abuse if combined with other vulnerabilities. Returning raw `Exception` strings back to clients can leak internal stack trace information or business logic details.
+**Prevention:** Always restrict CORS origins using environment variables to ensure only trusted domains can communicate with the API. Always log raw exceptions internally (`exc_info=True`) while presenting a sanitized, generic error message to the client.
