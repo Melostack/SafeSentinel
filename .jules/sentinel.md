@@ -1,0 +1,4 @@
+## 2024-05-18 - [API Security Hardening]
+**Vulnerability:** Overly permissive CORS (`allow_origins=["*"]`), missing input validation limits (DoS risk), and exception handlers leaking internal error strings (`detail=str(e)`).
+**Learning:** Returning unhandled exception strings directly to the client can leak stack traces or internal application state, while missing string limits can be exploited to exhaust server resources. Relying on default wildcard CORS allows unauthorized origins to make API requests.
+**Prevention:** Always restrict CORS origins using environment variables (`FRONTEND_URL`), enforce `max_length` using Pydantic `Field` in all incoming request models, and internally log errors (`exc_info=True`) while returning generic error messages (e.g., "Erro interno do servidor") to the user.
