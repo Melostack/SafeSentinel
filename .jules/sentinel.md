@@ -1,0 +1,4 @@
+## 2024-10-18 - [Information Leakage in API Error Handler]
+**Vulnerability:** The exception handler in the `/check` endpoint returns raw exception details (`detail=str(e)`) to the client, exposing internal server state and potentially sensitive information.
+**Learning:** Returning raw exception strings directly to unauthenticated clients in error responses is a security vulnerability that leaks stack traces and internal details.
+**Prevention:** Ensure exception handlers log the error internally using `exc_info=True` and return generic, non-sensitive messages to the client to prevent information leakage.
