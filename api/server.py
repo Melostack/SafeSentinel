@@ -9,9 +9,10 @@ import os
 
 app = FastAPI()
 
+frontend_urls = os.getenv("FRONTEND_URL", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=frontend_urls,
     allow_methods=["*"],
     allow_headers=["*"],
 )
