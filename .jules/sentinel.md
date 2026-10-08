@@ -1,0 +1,4 @@
+## 2023-10-08 - Parameter Injection Risk in API Connectors
+**Vulnerability:** API connectors (Binance and Bybit) constructed HTTP query strings by manually concatenating dictionary keys/values or using formatted strings (e.g., `f"coin={asset}"`). This exposed the application to parameter injection if any input contained unescaped control characters (like `&` or `=`).
+**Learning:** Manual string manipulation for query parameters in API connectors is error-prone and bypasses standard URL encoding protections. Furthermore, race conditions can occur if timestamps used in signatures are generated separately from those in headers.
+**Prevention:** Always use standard library functions like `urllib.parse.urlencode` to securely encode query strings, which automatically handles special characters. In addition, when building signed requests, generate the timestamp exactly once and pass it to both the signature generator and the request headers to maintain consistency.
