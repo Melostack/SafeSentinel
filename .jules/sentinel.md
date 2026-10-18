@@ -1,0 +1,4 @@
+## 2024-10-18 - Overly Permissive CORS Configuration
+**Vulnerability:** The FastAPI application uses `allow_origins=["*"]` in the CORS middleware, which permits any domain to make cross-origin requests to the API. This can lead to unauthorized access and potential data leakage.
+**Learning:** Development configurations often slip into production. Even for internal tools or APIs proxied through a frontend, CORS should be restricted to known, trusted origins (like the frontend application's URL) to enforce the same-origin policy securely.
+**Prevention:** Always restrict `allow_origins` to explicitly defined, trusted URLs instead of using the wildcard `["*"]`. Use environment variables (e.g., `FRONTEND_URL`) to manage these allowed origins across different environments.
