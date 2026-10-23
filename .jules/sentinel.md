@@ -1,0 +1,4 @@
+## 2024-05-24 - [Fix Parameter Injection Vulnerability in Binance Connector]
+**Vulnerability:** The Binance API connector (`BinanceConnector`) was constructing query strings for HMAC signature generation using string formatting (`f"{k}={v}"`) without proper URL encoding. This could allow parameter injection attacks where malicious values could alter the intended query parameters or structure.
+**Learning:** Even internal API wrappers must handle parameter encoding securely using built-in URL encoding libraries (`urllib.parse.urlencode`) instead of manual string concatenation, especially when those parameters are part of an authenticated payload signature.
+**Prevention:** Always use standard libraries for URL and parameter encoding when building API requests and signature payloads to prevent injection vulnerabilities.
