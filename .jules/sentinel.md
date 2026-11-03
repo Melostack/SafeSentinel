@@ -1,0 +1,4 @@
+## 2024-05-25 - Parameter Injection in API Signatures
+**Vulnerability:** API connectors constructed query strings using manual concatenation (`+` and `&.join`), allowing attackers to inject unauthorized parameters into signed requests via the `asset` parameter.
+**Learning:** Manual query construction for authenticated endpoints creates a Server-Side Request Forgery (SSRF) / Parameter Injection vector where injected parameters are successfully signed. Generating separate timestamps for signature payloads and headers also causes race conditions.
+**Prevention:** Always use `urllib.parse.urlencode` to securely encode parameters and prevent injection. Use a single timestamp variable for both signatures and headers.
