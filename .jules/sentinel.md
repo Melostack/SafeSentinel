@@ -1,0 +1,4 @@
+## 2024-05-25 - Information Leakage in API Error Handling
+**Vulnerability:** The FastAPI `except Exception as e:` block in `api/server.py`'s `/check` endpoint was exposing raw exception messages back to the user via `raise HTTPException(status_code=500, detail=str(e))`. This can inadvertently expose internal stack traces or system details (Information Leakage).
+**Learning:** Exposing unhandled exception strings directly to unauthenticated endpoints provides attackers with insight into system architecture or state, especially in high-level routing components like `server.py`.
+**Prevention:** Exception handlers must log the internal error (`exc_info=True`) and return a generic, non-sensitive message (e.g., "Erro interno do servidor") in accordance with language and security masking requirements.
